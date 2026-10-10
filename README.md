@@ -4,7 +4,8 @@
 > 一支本地运行、各司其职、还会越用越懂你的 AI 团队。你说人话，它拆活、分工、干活——数据一步都不出本机。
 
 <p align="center">
-  <a href="https://leizai.cc/download.html"><b>⬇️ 下载桌面版</b></a> &nbsp;|&nbsp;
+  <a href="https://github.com/zhuang3719/leizai-releases/releases/latest"><b>⬇️ 下载最新安装包</b></a> &nbsp;|&nbsp;
+  <a href="https://leizai.cc/download.html">官网下载页</a> &nbsp;|&nbsp;
   <a href="https://leizai.cc"><b>🌐 访问官网</b></a> &nbsp;|&nbsp;
   <a href="https://leizai.cc/docs.html">文档</a> &nbsp;|&nbsp;
   <a href="https://leizai.cc/opensource.html">开源说明</a>
@@ -14,7 +15,7 @@
 
 ## 本仓说明（重要）
 
-> **本仓为引擎（Lite）源码**；核心能力（会话树 / 雷影 / 记忆 / 进化 / 反思 / 信箱）为**专有（Proprietary）**、**不在此仓**，完整功能请下载官方发行包。详见 [开源说明](https://leizai.cc/opensource.html) 与 `NOTICE`。
+> **本仓为引擎（Lite）源码**（引擎 / 外壳 / 协议 / UI）；核心能力（会话树 / 雷影 / 记忆 / 进化 / 反思 / 信箱）为**专有（Proprietary）**、**不在此仓**。**完整客户端安装包请到 [Releases](https://github.com/zhuang3719/leizai-releases/releases/latest) 或 [官网下载页](https://leizai.cc/download.html) 获取**。详见 [开源说明](https://leizai.cc/opensource.html) 与 `NOTICE`。
 
 ## 这是什么
 
@@ -78,7 +79,10 @@ npm run smoke        # 冒烟测试（scripts/api-smoke.mjs）
 
 ## 下载桌面版
 
-不想碰命令行？直接下载桌面客户端：**<https://leizai.cc/download.html>**
+不想碰命令行？直接下载桌面客户端：
+
+- **最新安装包（GitHub Releases，公开仓仅安装包）**：<https://github.com/zhuang3719/leizai-releases/releases/latest>
+- **官网下载页**：<https://leizai.cc/download.html>
 
 - Windows 桌面版（Setup）与免安装便携版（Portable）
 - 下载后请核对页面上的 SHA-256 校验值
@@ -135,7 +139,8 @@ scripts/        构建与冒烟测试脚本
 | | |
 |---|---|
 | 官网 | <https://leizai.cc> |
-| 下载桌面版 | <https://leizai.cc/download.html> |
+| 下载最新安装包（Releases） | <https://github.com/zhuang3719/leizai-releases/releases/latest> |
+| 下载桌面版（官网） | <https://leizai.cc/download.html> |
 | 文档 | <https://leizai.cc/docs.html> |
 | 开源说明 | <https://leizai.cc/opensource.html> |
 | 微信社群 | `docs/assets/wechat-group.jpg` |
