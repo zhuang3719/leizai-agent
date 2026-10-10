@@ -1,5 +1,5 @@
 // A1 前端 · 通讯任务脊 TaskSpine（P2b-3 · 雷影·美工）
-// 依据：ADR-0005 v9 §2.7 L2 + 附录《通讯流程可视化_方案v1.1》
+// 依据：按既定设计（通讯流程可视化规格 L2）
 //   聊天窗线程侧竖轴：每 task 一节点（六态）→ 展开任务卡（from→to·type·标识短码·耗时·字数·lastError）
 //   汇总条「在办 task N · 已回 M · 逾期 X」；点"↗"→ 通讯中心定位（下钻）。
 // 数据源：GET /api/mailbox/flow（纯读无副作用）· 轮询 4s 兜底 + SSE（mailbox-message/consumed/replied）即时刷。

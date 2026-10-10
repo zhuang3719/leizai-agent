@@ -1,5 +1,5 @@
 // A1 前端 · 智能体头像「四态」判定单一权威（忙碌 / 空闲 / 离线 / 重启中）
-//   设计（主人已确认，美工样例《智能体头像状态区分.html》）：
+//   设计（按已确认的视觉样例）：
 //     · 判定优先级：忙碌 > 重启中 > 离线 > 空闲
 //     · 数据源：/api/mailbox/summary 的 roles[]（busy / restarting / online / lastSeen / lastTs）
 //     · 兼容：引擎未提供 online/lastSeen 时（旧引擎未重启的过渡窗口）→ 一律回退「空闲」，

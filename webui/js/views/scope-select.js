@@ -1,7 +1,7 @@
 // 会话级「模型 + 推理等级」选择器（雷影·美工）
 // 位置：.composer__field 内、#composer-input 之后、#composer-stop/#btn-send 之前（按钮恒在最右）；作用域=当前会话（PUT /api/sessions/:id）。
 // 数据：会话值 GET /api/sessions/:id（s.model / s.reasoningEffort，null=跟随全局）；全局值 GET /api/config。
-// 契约：<项目根>\workspace\projects\s-mts9v1cf-ozxj\会话级模型与推理等级_规格_20260922.md
+// 契约：按既定交互规格（会话级模型与推理等级）
 import { api } from '../api.js';
 import { store, toast } from '../store.js';
 

@@ -20,7 +20,7 @@ namespace LeiZai2 {
         public static volatile bool HasUpdate;
         public static volatile string LatestVersion;
 
-        // ── 视觉令牌（来源：workspace/doc/设计-更新弹窗视觉规范.md）──
+        // ── 视觉令牌（按既定视觉规范）──
         static readonly System.Drawing.Color C_BG     = System.Drawing.Color.FromArgb(0x05, 0x05, 0x07); // #050507 窗体底
         static readonly System.Drawing.Color C_PANEL  = System.Drawing.Color.FromArgb(0x0E, 0x0E, 0x15); // #0E0E15 卡片底
         static readonly System.Drawing.Color C_TRACK  = System.Drawing.Color.FromArgb(0x19, 0x19, 0x24); // #191924 进度轨

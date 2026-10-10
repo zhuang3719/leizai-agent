@@ -10,7 +10,7 @@
  *   > env `LEIZAI_PRO_MANIFEST_SK_FILE`(路径) > `<构建机本地>/keys/signing_key_pkcs8.b64`（构建机本地，gitignore）
  * 公钥：写入 `pro/manifest.pub`（base64 SPKI DER，可入仓/随包）。
  *
- * 依据：workspace/doc/P3-Pro硬防护-定案.md §1/§4。
+ * 依据：按既定设计（Pro 硬防护定案）。
  */
 import fs from 'node:fs';
 import path from 'node:path';

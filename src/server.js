@@ -850,7 +850,7 @@ async function route(req, res, url) {
 
   // 会话
   if (method === 'GET' && is('/api/sessions')) {
-    // 免费能力（《Pro收费项-门禁对照》§二）：本会话列表基础可用 → 不设门禁。
+    // 免费能力（按既定门禁规格）：本会话列表基础可用 → 不设门禁。
     // 「跨会话/跨实例翻旧账 / 全文检索 / 顺藤摸瓜」才 Pro → 落点在 project(tool) 的 search/overview/trace 等入口。
     let list = runtime.listSessions();
     const pj = url.searchParams.get('project');
@@ -1365,7 +1365,7 @@ async function route(req, res, url) {
     const entries = rows.map((m) => ({ id: m.id, from: m.from_id, to: m.to_id, type: m.type, priority: m.priority, ts: m.ts, status: m.status, attempts: m.attempts, preview: String(m.content || '').slice(0, 120) }));
     return sendJson(res, 200, { status, count: entries.length, entries, available: true });
   }
-  // —— P1：信箱全量流水（含已闭环）· 纯读无副作用（ADR-0005 §2.7 P1）——
+  // —— P1：信箱全量流水（含已闭环）· 纯读无副作用（按既定信箱流水规格）——
   if (method === 'GET' && is('/api/mailbox/flow')) {
     if (!mailbox.available()) return sendJson(res, 200, { count: 0, entries: [], available: false });
     const since = Number(url.searchParams.get('since')) || 0;
@@ -1717,7 +1717,7 @@ async function route(req, res, url) {
   // —— 询问选项框（Ask Box）：回答端点 ——
   //   POST /api/ask/answer body={askId, kind:'option|skip|text', value?}
   //   行为：把回答拼成一条用户消息注入该 session（option→【选择】<label>；text→【补充】<value>）
-  //   → 触发该会话新回合（复用 runChat）→ 标记该 ask 已答（从持久化移除）。契约见 doc/询问选项框_方案v1.md §一。
+  //   → 触发该会话新回合（复用 runChat）→ 标记该 ask 已答（从持久化移除）。契约：按既定交互规格（询问选项框）。
   //   kind='skip'：语义=暂不执行/保持现状/仅关闭弹窗 → 只移除+广播关闭，**不注入不跑回合**（2026-09-21 主人明令纠正）。
   if (method === 'POST' && is('/api/ask/answer')) {
     let body = {};

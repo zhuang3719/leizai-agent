@@ -2381,7 +2381,7 @@ function wakeMailbox(sessionId, opts = {}) {
 
 /** 动作类型（非静默）：仅这些类型驱动"唤醒/续跑"；静默类型(reply/ack/notify，见 cfg.mailboxSilentTypes)
  *  只落库/上屏/写标记，不唤醒、不起续跑轮（防"回执乒乓"）。缺省类型视为动作类（server 默认 type=task）。
- *  ★P0② 双型兼容（ADR-0005 v10 修 X2）：入参可为 **type 字符串** 或 **消息对象 m**——
+ *  ★P0② 双型兼容（双型兼容修订）：入参可为 **type 字符串** 或 **消息对象 m**——
  *    - 字符串：原行为（按 type 判定）；
  *    - 对象：取 m.type；且 **wake_intent==='actionable'** 时一律视为动作类
  *      （用于 task-state done 的 notify 显式获得唤醒能力）。

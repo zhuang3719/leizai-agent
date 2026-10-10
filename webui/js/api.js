@@ -22,7 +22,7 @@ export const api = {
   put: (p, b) => jsonReq('PUT', p, b === undefined ? {} : b),
   del: (p) => jsonReq('DELETE', p),
 
-  // —— 端点速写（对齐《A1 方案》§8） ——
+  // —— 端点速写（按既定接口规格） ——
   health: () => api.get('/api/health'),
   daemon: () => api.get('/api/daemon'),
   config: () => api.get('/api/config'),

@@ -1,7 +1,7 @@
 // A1 前端 · 新用户首启引导（雷影·美工）
 // 载体：自定义组件 modal（store.modal = { kind:'component', component: OnboardingWizard, hideHead:true, hideFoot:true, modalClass:'modal--onboarding' }）
 // 入口：app.js showOnboarding()（首次自动弹一次，localStorage: leizai.onboarded）+ window.__leizaiShowOnboarding 复用
-// 文案：雷影·文案《首启文案稿》A 多步版（去术语）
+// 文案：首启引导多步版（去术语）
 // 红线：只走前端；第②屏保存复用既有 PUT /api/config（provider=deepseek + apiKeys），不新造端点；Key 只进不出、不回显。
 import { defineComponent, ref, onMounted } from 'vue';
 import { api } from '../api.js';

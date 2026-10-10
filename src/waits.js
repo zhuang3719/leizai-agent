@@ -1,6 +1,6 @@
 'use strict';
 // 雷仔 · 等待↔唤醒根治 v1 · waits 表（单一事实源）
-// 定案：workspace/projects/s-mts9v1cf-ozxj/等待唤醒根治_定案v1.md（refs=wait-wake-rootcause）
+// 定案：按既定设计（等待唤醒根治）。
 //
 // 唯一不变量（可证伪）：凡"将等待"（等跨会话回执 / 等外部异步事件）必须登记到本表；
 //   每条等待终态 ∈ {matched, expired, cancelled} 三态之一。

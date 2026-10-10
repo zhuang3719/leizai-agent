@@ -1,6 +1,6 @@
 'use strict';
 // 雷仔 · 询问选项框（Ask Box）· 未答 ask 持久化 + 读写
-// 契约见 workspace/doc/询问选项框_方案v1.md §一。
+// 契约：按既定交互规格（询问选项框）。
 // 存储：<dataDir>/asks.json（环境变量 LEIZAI_ASKS_PATH 可覆盖，供测试隔离）。
 // 结构：{ asks: { <askId>: {askId, sessionId, question, options, allowSkip, allowFreeText, ts} } }
 const fs = require('node:fs');
