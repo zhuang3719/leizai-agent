@@ -1,0 +1,159 @@
+/* ============================================================================
+   通讯任务脊 TaskSpine（P2b-3 · 雷影·美工）——独立样式文件（勿并入 components.css）
+   依据 ADR-0005 v9 §2.7 L2 + 附录《通讯流程可视化_方案v1.1》
+   可访问性：六态 色 + 形状 双编码（形状=色盲冗余）；prefers-reduced-motion 关脉冲。
+   ========================================================================== */
+
+/* 位置：任务脊现为工作区「中右栏」侧边栏（.col-spine，位于 .col-main 与 .col-feed 之间）。
+   折叠由 app.js 切换：宽屏 .workspace.is-spine-open（列宽 0→--spine-w）/ 窄屏 .col-spine.is-open（右侧抽屉）；
+   默认隐藏 → 不再悬浮遮挡核心舱工具栏。本组件内容撑满该栏。 */
+
+/* 问题1 修复：打通高度链 .col-spine(flex列) → #task-spine(flex:1;min-height:0) → .tsp(flex:1) → .tsp__panel(overflow-y:auto)
+   否则 #task-spine 被内容撑高、panel 自身高=内容高 → scrollHeight==clientHeight 永不滚动。 */
+.col-spine > #task-spine {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tsp {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* —— 面板（侧栏内容，撑满 .col-spine；边框/底色由 col-spine 提供，避免双框）—— */
+.tsp__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: auto;
+  overflow-y: auto;
+  padding: var(--sp-2, 8px);
+}
+.tsp__head { display: flex; align-items: center; gap: 6px; padding: 4px 4px 8px; }
+.tsp__title { font-size: 12px; font-weight: 600; color: var(--fg); }
+.tsp__sum { font-size: 11px; color: var(--dim); margin-left: auto; white-space: nowrap; }
+.tsp__x { border: 0; background: transparent; color: var(--dim); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 4px; }
+.tsp__x:hover { color: var(--fg); }
+
+.tsp__empty { padding: 14px 8px; color: var(--dim); font-size: 12px; text-align: center; }
+
+/* —— 竖轴 —— */
+.tsp__axis { list-style: none; margin: 0; padding: 0 0 0 2px; }
+.tsp__item { position: relative; padding: 0 0 8px 0; }
+.tsp__item::before {             /* 脊线 */
+  content: "";
+  position: absolute;
+  left: 9px; top: 16px; bottom: -2px;
+  width: 1px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+}
+.tsp__item:last-child::before { display: none; }
+
+.tsp__row { display: flex; align-items: center; gap: 6px; }
+
+.tsp__node {
+  flex: 0 0 auto;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  border: 1px solid currentColor;
+  font-size: 11px;
+  position: relative;
+  z-index: 1;
+  color: #9CA3AF;
+}
+.tsp__shape { color: currentColor; font-weight: 700; }
+
+/* 六态色（与 §2.7 精确色值表一致；sent/overdue 为 P2b-3 补充分离态） */
+.tsp__node.st-sent      { color: #6B7280; }
+.tsp__node.st-delivered { color: #9CA3AF; }
+.tsp__node.st-working   { color: #22D3EE; }
+.tsp__node.st-replied   { color: #22C55E; }
+.tsp__node.st-overdue   { color: #F59E0B; }
+.tsp__node.st-failed    { color: #EF4444; }
+.tsp__node.st-cancelled { color: #6B7280; }
+.tsp__item.is-cancelled .tsp__c1 { text-decoration: line-through; opacity: .7; }
+.tsp__item.is-failed .tsp__c1 { text-decoration: line-through; }
+
+/* 处理中：脉冲（可访问性降级见下） */
+.tsp__node.st-working::after {
+  content: "";
+  position: absolute; inset: -3px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  animation: tspPulse 1.4s ease-out infinite;
+}
+@keyframes tspPulse { from { opacity: .8; transform: scale(.9); } to { opacity: 0; transform: scale(1.5); } }
+
+.tsp__card {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex; flex-direction: column; gap: 1px;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  color: var(--fg);
+}
+.tsp__card:hover { background: color-mix(in srgb, var(--acc) 8%, transparent); border-color: color-mix(in srgb, var(--acc) 30%, var(--border)); }
+.tsp__c1 { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp__c1 b { font-weight: 600; }
+.tsp__arrow { color: var(--dim); margin: 0 4px; }
+.tsp__c2 { font-size: 10.5px; color: var(--dim); }
+.tsp__st { font-style: normal; }
+
+.tsp__jump {
+  flex: 0 0 auto;
+  border: 0; background: transparent; color: var(--dim);
+  cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 5px;
+}
+.tsp__jump:hover { color: var(--acc); background: color-mix(in srgb, var(--acc) 12%, transparent); }
+
+/* —— 任务卡明细 —— */
+.tsp__detail {
+  margin: 4px 0 0 24px;
+  padding: 6px 8px;
+  border-left: 2px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: var(--panel2);
+  border-radius: 0 6px 6px 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px;
+  font-size: 10.5px;
+}
+.tsp__detail > div { display: flex; gap: 5px; min-width: 0; }
+.tsp__detail dt { color: var(--dim); flex: 0 0 auto; }
+.tsp__detail dd { margin: 0; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsp__detail .tsp__err { color: #EF4444; }
+.tsp__prev { grid-column: 1 / -1; }
+.tsp__prev dd { white-space: normal; }
+
+/* —— 会话列表：「新回执未看」小点（L1）—— */
+.session-item__nr {
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #22C55E 22%, transparent);
+  vertical-align: middle;
+}
+
+/* —— P2b-3：任务脊下钻 → 通讯中心行高亮（M23）—— */
+.comm-row.is-hit {
+  outline: 2px solid color-mix(in srgb, var(--acc) 70%, transparent);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--acc) 12%, transparent) !important;
+  animation: commHit 1.2s ease-out 2;
+}
+@keyframes commHit { from { background-color: color-mix(in srgb, var(--acc) 26%, transparent); } to { background-color: color-mix(in srgb, var(--acc) 12%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .comm-row.is-hit { animation: none; } }
+
+/* —— 可访问性降级 —— */
+@media (prefers-reduced-motion: reduce) {
+  .tsp__node.st-working::after { animation: none; opacity: .35; }
+}
+.tsp[data-reduced-motion="1"] .tsp__node.st-working::after { animation: none; opacity: .3; }

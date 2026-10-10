@@ -1,0 +1,149 @@
+/* 询问选项框 Ask Box（雷影·美工）v1.2
+   主我 ask_user → SSE `ask-user` → composer 上方渲染；选/跳过/补充 → POST /api/ask/answer。
+   v1.1：多选(复选框) + 选中不即发(点[提交]) + 选后补充文字。
+   v1.2：①弹窗打开时隐藏底部输入框(.composer.ask-box-open) ②描述文字提亮 + 每选项主题色区分。
+   设计语言对齐：panel 底 + 边框 + 圆角 + --acc 高亮；出现 fade+上滑；prefers-reduced-motion 降级。
+
+   ── 配色与对比度（深色底实测，WCAG 相对亮度公式）──
+   描述文字 旧 var(--dim)=#7C7C8E，对 --panel2 #101016 对比度 4.63:1（偏暗、观感吃力）
+             新 --ask-desc = #B4BCCB，对 #101016 对比度 9.93:1、对 --panel3 #16161E 9.42:1（≥4.5 达标，醒目不刺眼）
+   选项主题色（左色条 + 未选勾选圈，对 #101016 对比度均 ≥8:1）：
+     c1 青 #4DF3FF(14.06) · c2 紫 #B79CFF(8.32) · c3 青绿 #5BD9A8(10.77)
+     c4 琥珀 #FFC879(12.45) · c5 蓝 #7EC8FF(10.47) · c6 粉 #FF9BB5(9.58)
+   选中态仍以 --acc 描边 + glow + 填充勾选表示，主题色条保留（识别不丢）。 */
+
+.ask-box-host { display: block; }
+.ask-box-host[hidden] { display: none; }
+
+/* ① 弹窗打开时：隐藏底部输入区（弹窗独占，消除"两个输入框并存"） */
+.composer.ask-box-open .composer__field { display: none; }
+
+.ask-box {
+  --ask-desc: #B4BCCB;   /* 描述文字·提亮次级色（对 panel2 9.93:1） */
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  box-sizing: border-box; max-width: 100%;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--acc);
+  border-radius: var(--r-card);
+  background: linear-gradient(180deg, var(--panel3), var(--panel2));
+  box-shadow: var(--glow);
+  animation: askbox-in .22s ease-out both;
+}
+.ask-box.is-closing { animation: askbox-out .18s ease-in both; }
+.ask-box.is-answered { opacity: .55; pointer-events: none; }
+
+@keyframes askbox-in  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes askbox-out { to   { opacity: 0; transform: translateY(6px); } }
+
+/* ── 问题行 ── */
+.ask-box__head { display: flex; gap: var(--sp-2); align-items: flex-start; }
+.ask-box__icon { flex: none; color: var(--acc); line-height: 1.4; }
+.ask-box__q {
+  flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 600; line-height: 1.5; color: var(--text);
+  word-break: break-word; overflow-wrap: anywhere;
+}
+
+/* ── 选项区（flex-wrap；超高时自身滚动，不撑爆 composer）── */
+.ask-box__opts {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  max-height: 34vh; overflow-y: auto;
+  padding-right: 2px;
+}
+.ask-opt {
+  --opt: var(--acc);   /* 选项主题色（默认兜底；下列 nth-child 循环取值） */
+  flex: 1 1 180px; min-width: 140px; max-width: 100%; box-sizing: border-box;
+  display: flex; gap: var(--sp-2); align-items: flex-start;
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit; font-size: 13px; text-align: left;
+  color: var(--text);
+  border: 1px solid var(--border); border-left: 3px solid var(--opt);   /* ② 左侧主题色条 */
+  border-radius: var(--r-chip); background: var(--panel2);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;   /* v6.57：去掉 transform 过渡（防点击位移抖动） */
+}
+/* ② 每选项主题色（6 色循环，色值见文件头对比度表） */
+.ask-box__opts > .ask-opt:nth-child(6n+1) { --opt: #4DF3FF; }
+.ask-box__opts > .ask-opt:nth-child(6n+2) { --opt: #B79CFF; }
+.ask-box__opts > .ask-opt:nth-child(6n+3) { --opt: #5BD9A8; }
+.ask-box__opts > .ask-opt:nth-child(6n+4) { --opt: #FFC879; }
+.ask-box__opts > .ask-opt:nth-child(6n+5) { --opt: #7EC8FF; }
+.ask-box__opts > .ask-opt:nth-child(6n)   { --opt: #FF9BB5; }
+
+.ask-opt:hover { border-color: var(--opt); border-left-color: var(--opt); background: var(--panel3); box-shadow: var(--glow); }
+.ask-opt:focus-visible { outline: none; border-color: var(--opt); box-shadow: var(--glow-strong); }
+.ask-opt:active { background: var(--panel3); }   /* v6.57：点击反馈改为不改几何（去掉 translateY(1px) 造成的上下抖动） */
+.ask-opt__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ask-opt__label { font-weight: 600; word-break: break-word; }
+.ask-opt__desc { font-size: var(--fs-meta); color: var(--ask-desc); line-height: 1.45; word-break: break-word; }
+
+/* 勾选指示：多选=方形复选框 / 单选=圆形单选钮（未选=主题色描边，已选=--acc 填充） */
+.ask-opt__mark {
+  position: relative; flex: none; width: 16px; height: 16px; margin-top: 1px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--opt); border-radius: 5px; background: transparent;
+  transition: border-color .15s, background .15s;
+}
+.ask-box:not(.ask-box--multi) .ask-opt__mark { border-radius: 50%; }
+.ask-opt.is-selected { border-color: var(--acc); border-left-color: var(--opt); background: var(--panel3); box-shadow: var(--glow); }
+.ask-opt.is-selected .ask-opt__mark { border-color: var(--acc); background: var(--acc); }
+/* 多选：对勾 */
+.ask-box--multi .ask-opt.is-selected .ask-opt__mark::after {
+  content: ''; position: absolute; left: 4.5px; top: 1.5px;
+  width: 4px; height: 8px; border: solid #050507; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* 单选：内点 */
+.ask-box:not(.ask-box--multi) .ask-opt.is-selected .ask-opt__mark::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--bg);
+  transform: translate(-50%, -50%);
+}
+
+/* ── 底部：补充框 + 提交 + 跳过 ── */
+.ask-box__foot { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.ask-box__free {
+  flex: 1 1 160px; min-width: 0; box-sizing: border-box;
+  display: flex; align-items: center;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--border); border-radius: var(--r-btn); background: var(--panel2);
+}
+.ask-box__free:focus-within { border-color: var(--acc); box-shadow: var(--glow); }
+.ask-box__free input {
+  flex: 1; min-width: 0;
+  padding: 7px 0; border: none; outline: none; background: none;
+  font-size: 13px; color: var(--text);
+}
+.ask-box__free input::placeholder { color: var(--ask-desc); opacity: .72; }
+
+.ask-submit {
+  flex: none; padding: 7px 16px; box-sizing: border-box;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: #050507; background: var(--acc);
+  border: 1px solid var(--acc); border-radius: var(--r-btn);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+.ask-submit:hover:not(:disabled) { background: var(--acc2); border-color: var(--acc2); box-shadow: var(--glow); }
+.ask-submit:focus-visible { outline: none; box-shadow: var(--glow-strong); }
+.ask-submit:disabled { color: var(--dim2); background: transparent; border-color: var(--border); cursor: default; }
+
+.ask-skip {
+  flex: none; padding: 7px 14px; box-sizing: border-box;
+  font: inherit; font-size: 13px;
+  color: var(--ask-desc); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r-btn);
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.ask-skip:hover { color: var(--text); border-color: var(--dim2); }
+.ask-skip:focus-visible { outline: none; border-color: var(--acc); box-shadow: var(--glow); }
+
+/* ── 动效降级 ── */
+@media (prefers-reduced-motion: reduce) {
+  .ask-box, .ask-box.is-closing { animation: none; }
+  .ask-opt { transition: none; }
+}
+.no-motion .ask-box, .no-motion .ask-box.is-closing { animation: none; }

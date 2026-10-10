@@ -1,0 +1,148 @@
+/* ============================================================
+   base.css — 重置 / 设计令牌 / 字体 / 滚动条
+   新客户端 A1 · 雷池·中枢   雷影·美工
+   令牌逐字对齐《新客户端_A1_视觉规格_v1.md》§0
+   ============================================================ */
+
+/* ---------- 设计令牌 ---------- */
+:root {
+  /* 色彩（视觉规格 §0.1，逐字） */
+  --bg:      #050507;
+  --panel:   #0E0E15;
+  --panel2:  #191924;
+  --panel3:  #23232F;
+  --border:  #2E2E40;
+  --text:    #EEF0F6;
+  --dim:     #8F8FA3;
+  --dim2:    #8A8A9C;
+  --acc:     #00E5FF;   /* 主强调·闪电青 */
+  --acc2:    #4DF3FF;   /* 亮青 */
+  --vio:     #9E7BFF;   /* 紫 */
+  --ok:      #2BE088;
+  --err:     #FF4D6D;
+  --err-bg:  #D93654;   /* P0-3：徽标背景专用（白字 4.56 ✓）；--err 仍用于错误文字 */
+  --warn:    #FFB020;
+
+  /* 角色色（范式：程序员青/美工紫/文案橙/测试绿/主我亮青） */
+  --role-programmer: #4D7CFF;   /* v6.38：靛蓝·避免与主我闪电青撞色 */
+  --role-artist:     var(--vio);
+  --role-writer:     var(--warn);
+  --role-tester:     var(--ok);
+  --role-main:       #00E5FF;   /* v6.38：闪电青·雷仔品牌色 */
+  --role-researcher: #FF5CA8;   /* v6.47：研究员·品红（避开已有蓝/紫/橙/绿/青） */
+  --role-sales:      #FF7A3D;   /* v6.48：销售·橙红（与文案橙 #FFB020、err 红 #FF4D6D 色相区分） */
+  --role-editor:     #A3E635;   /* v6.49：剪辑师·黄绿（与文案橙 #FFB020、测试绿 #2BE088 色相区分） */
+
+  /* 语义色板（P0-3 配色收敛：同类同色；元素引用语义名而非裸色）
+     —— 命中/成功沿用主青（与主题一致）；未命中=警告橙；输出=中性灰；进度条健康度同样以主青为基准 */
+  --sem-hit:  var(--acc);
+  --sem-miss: var(--warn);
+  --sem-out:  var(--dim);
+  --sem-cost: #FFC86B;  /* P2-1：消耗·暖黄（与警示橙 --warn 语义分离） */
+
+  /* 形状与节奏（§0.3） */
+  --r-card:   12px;
+  --r-bubble: 14px;
+  --r-btn:     8px;
+  --r-chip:   10px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px;
+
+  --sh-card: 0 2px 12px rgba(0, 0, 0, .5);
+  --sh-lift: 0 6px 20px rgba(0, 0, 0, .6);
+  --glow:    0 0 12px rgba(0, 229, 255, .25);
+  --glow-strong: 0 0 18px rgba(0, 229, 255, .45);
+
+  /* 字体（§0.2） */
+  --font-ui:   "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+  --fs-base: 14px; --fs-sm: 11px; --fs-title: 16px; --fs-logo: 18px;
+  /* 语义字号（P0-1 收敛：避免散落硬编码，小字号不小于 11px） */
+  --fs-body: 14.5px;   /* 聊天正文 .md */
+  --fs-meta: 12px;     /* 元信息（时间/事件 meta 等），替代 10px + --dim2 的过暗过小 */
+
+  /* 布局尺寸（layout.css 使用） */
+  --rail-w: 56px;
+  --side-w: 248px;
+  --feed-w: 300px;
+  --spine-w: 340px;   /* 通讯任务脊侧栏展开宽（折叠态见 --spine-col） */
+  --spine-col: 0px;   /* 脊列当前宽（默认 0=隐藏；.workspace.is-spine-open 置为 --spine-w） */
+  --titlebar-h: 44px;
+  --statusbar-h: 26px;
+
+  /* 动效 */
+  --dur: .14s;
+  --ease: cubic-bezier(.2, .7, .3, 1);
+}
+
+/* CSS 自定义属性默认不可插值 → 注册 --spine-col 为 <length>，使 grid 列宽可平滑过渡（问题1·丝滑） */
+@property --spine-col {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+
+/* ---------- 重置 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;                 /* 应用内滚动，不用整页滚动 */
+}
+
+h1, h2, h3, h4, p, figure, blockquote, dl, dd { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+a { color: var(--acc); text-decoration: none; }
+a:hover { color: var(--acc2); text-decoration: underline; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: none; cursor: pointer; padding: 0; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+
+img, svg, video { display: block; max-width: 100%; }
+
+/* [hidden] 兜底：组件类的 display 不得覆盖隐藏语义 */
+[hidden] { display: none !important; }
+
+code, kbd, pre, samp, .mono { font-family: var(--font-mono); font-size: 12px; }
+
+table { border-collapse: collapse; width: 100%; }
+
+/* 文本工具类 */
+.mono     { font-family: var(--font-mono); }
+.dim      { color: var(--dim); }
+.dim2     { color: var(--dim2); }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-only  { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+::selection { background: rgba(0, 229, 255, .28); color: #fff; }
+
+/* ---------- 滚动条（§七：细条，悬停转青） ---------- */
+* { scrollbar-width: thin; scrollbar-color: var(--dim2) transparent; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--acc); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- 焦点可见（键盘可达，P-2） ---------- */
+:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 研究员 · 放大镜（调研/情报）——风格对齐 role-tester.svg：单色描边、线条简洁 -->
+  <circle cx="10.5" cy="10.5" r="6.2"/>
+  <path d="M15.3 15.3l5 5"/>
+  <path d="M8 10.5h5"/>
+  <path d="M10.5 8v5"/>
+</svg>

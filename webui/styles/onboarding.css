@@ -1,0 +1,169 @@
+/* ============================================================
+   首启引导 · 视觉（雷影·美工）
+   载体：自定义组件 modal（OnboardingWizard，kind:'component'）
+   风格：沿用现有设计变量（--panel*/--border/--r-bubble/--sh-lift/--acc/--vio/--ok）
+   依据：<项目根>\项目文件\客户端webui\首启引导\设计方案.md
+   ============================================================ */
+
+/* 弹窗外框满铺（组件自带头/体/脚） */
+.modal--onboarding { padding: 0; overflow: hidden; }
+.modal--onboarding .modal__body { padding: 0; }
+.modal--onboarding .pane-tree { overflow: visible; max-height: none; }
+
+.ob { display: flex; flex-direction: column; position: relative; }
+.ob::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(100% 60% at 50% 0%, rgba(0, 229, 255, .07), transparent 70%);
+}
+
+/* ---- 头 ---- */
+.ob__head { display: flex; align-items: center; gap: 10px; padding: 16px 20px 0; }
+.ob__brand {
+  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto;
+  background: color-mix(in srgb, var(--acc) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  box-shadow: var(--glow); color: var(--acc);
+}
+.ob__brand-img { display: block; width: 20px; height: 20px; object-fit: contain; }
+.ob__title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.ob__sub { font-size: 11.5px; color: var(--dim2); }
+.ob__close {
+  margin-left: auto; width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--dim); font-size: 18px; line-height: 1; cursor: pointer; border-radius: 8px;
+}
+.ob__close:hover { background: var(--panel3); color: var(--text); }
+
+/* ---- 进度 ---- */
+.ob__prog { padding: 14px 20px 0; }
+.ob__bar { height: 4px; border-radius: 99px; background: var(--panel3); overflow: hidden; }
+.ob__bar > i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  box-shadow: 0 0 10px rgba(0, 229, 255, .5);
+  transition: width .25s var(--ease, ease);
+}
+.ob__dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+.ob__dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--panel3); transition: width .2s var(--ease, ease); }
+.ob__dots i.on { width: 20px; border-radius: 99px; background: linear-gradient(90deg, var(--acc), var(--acc2)); box-shadow: var(--glow); }
+
+/* ---- 主体 + 切屏动效 ---- */
+.ob__body { padding: 22px 20px 10px; flex: 1; min-height: 0; }
+.ob-anim { animation: ob-in .22s var(--ease, ease); }
+@keyframes ob-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ob-anim { animation: none; } .ob__bar > i, .ob__dots i { transition: none; } }
+
+/* ---- 步骤 1：欢迎 ---- */
+.hero { text-align: center; padding: 6px 4px 4px; }
+.hero__logo {
+  width: 88px; height: 88px; margin: 0 auto 16px; border-radius: 24px; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(0,229,255,.22), rgba(158,123,255,.12) 55%, transparent 72%);
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  box-shadow: 0 0 34px rgba(0,229,255,.35);
+  animation: ob-pulse 3s ease-in-out infinite;
+}
+@keyframes ob-pulse { 0%,100% { box-shadow: 0 0 26px rgba(0,229,255,.28); } 50% { box-shadow: 0 0 40px rgba(0,229,255,.5); } }
+@media (prefers-reduced-motion: reduce) { .hero__logo { animation: none; } }
+.hero__logo-img {
+  display: block; width: 58px; height: 58px; object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.45));
+}
+.hero h2 { margin: 0 0 8px; font-size: 23px; letter-spacing: .5px; }
+.hero h2 em { font-style: normal; background: linear-gradient(90deg, var(--acc), var(--vio)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { margin: 0 auto; max-width: 430px; color: var(--dim); font-size: 13.5px; }
+.hero__tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+.ob-tag {
+  font-size: 11.5px; color: var(--acc2); padding: 4px 10px; border-radius: 99px;
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent);
+}
+
+/* ---- 步骤 2~4：大步骤号 + 文案 ---- */
+.stepwrap { display: flex; gap: 20px; align-items: center; }
+.stepwrap__num {
+  flex: 0 0 auto; width: 78px; height: 78px; border-radius: 20px; display: grid; place-items: center; position: relative;
+  background: radial-gradient(circle at 50% 40%, rgba(0,229,255,.16), transparent 70%);
+  border: 1px solid color-mix(in srgb, var(--acc) 34%, transparent);
+}
+.stepwrap__num b {
+  font-size: 34px; font-weight: 800;
+  background: linear-gradient(135deg, var(--acc), var(--vio));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.stepwrap__num span { position: absolute; bottom: 8px; font-size: 10px; color: var(--dim2); letter-spacing: 1px; }
+.stepwrap__txt { min-width: 0; }
+.stepwrap__txt h3 { margin: 0 0 6px; font-size: 18px; color: var(--text); }
+.stepwrap__txt p { margin: 0; color: var(--dim); font-size: 13.5px; }
+
+/* ---- 界面小样（插图：复用真实界面元素语言） ---- */
+.ob-mock { margin-top: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); padding: 12px 14px; font-size: 12.5px; }
+.ob-mock__lbl { font-size: 10.5px; color: var(--dim2); letter-spacing: .5px; margin-bottom: 8px; text-transform: uppercase; }
+.ob-mock__row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.ob-mock__row:last-child { border-bottom: none; padding-bottom: 0; }
+.ob-mock__k { width: 78px; flex: 0 0 auto; color: var(--dim); }
+.ob-mock__v { flex: 1; min-width: 0; color: var(--text); }
+.ob-ok { color: var(--ok); font-size: 11.5px; }
+
+/* ---- 步骤 2：内嵌 Key 配置 ---- */
+.ob-key { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.ob-key .input { flex: 1; min-width: 0; height: 36px; }
+.ob-key__err { margin-top: 8px; font-size: 11.5px; color: var(--err); }
+.ob-conn {
+  display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: 10px;
+  background: color-mix(in srgb, var(--ok) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 42%, transparent);
+}
+.ob-conn__ic {
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center;
+  color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent); font-size: 14px;
+}
+.ob-conn__t { font-size: 13px; color: var(--text); }
+.ob-conn__d { font-size: 11.5px; color: var(--dim2); }
+.ob-note {
+  margin-top: 12px; padding: 9px 12px; border-radius: 10px; font-size: 11.5px; line-height: 1.5; color: var(--text);
+  background: color-mix(in srgb, var(--acc) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 26%, transparent);
+}
+.ob-note b { color: var(--acc); }
+
+/* ---- 步骤 5：安心 + 出发 ---- */
+.ob-ready { text-align: center; padding: 4px; }
+.ob-ready__ck {
+  position: relative; width: 84px; height: 84px; margin: 0 auto 14px; border-radius: 24px; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(0,229,255,.20), rgba(158,123,255,.12) 55%, transparent 72%);
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  box-shadow: 0 0 30px rgba(0,229,255,.32);
+  animation: ob-pulse 3s ease-in-out infinite;
+}
+.ob-ready__logo { display: block; width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.45)); }
+.ob-ready__badge {
+  position: absolute; right: -5px; bottom: -5px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; line-height: 1; color: #04110a;
+  background: var(--ok); border: 2px solid var(--panel); box-shadow: 0 0 12px rgba(43,224,136,.5);
+}
+.ob-ready h3 { margin: 0 0 8px; font-size: 19px; color: var(--text); }
+.ob-ready p { margin: 0 auto; max-width: 440px; color: var(--dim); font-size: 13.5px; }
+.ob-safe { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.ob-safe span { font-size: 11.5px; color: var(--text); padding: 5px 11px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--border); }
+
+/* ---- 脚 ---- */
+.ob__foot {
+  display: flex; align-items: center; gap: 10px; padding: 14px 20px 16px; margin-top: 10px;
+  border-top: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 70%, transparent);
+}
+.ob__foot .sp { flex: 1; }
+
+/* ---- 窄窗 ---- */
+@media (max-width: 560px) {
+  .stepwrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .stepwrap__num { width: 60px; height: 60px; border-radius: 16px; }
+  .stepwrap__num b { font-size: 26px; }
+  .ob__body { padding: 18px 14px 8px; }
+  .ob__head, .ob__prog, .ob__foot { padding-left: 14px; padding-right: 14px; }
+  .ob-key { flex-wrap: wrap; }
+  .ob-key .input { flex: 1 1 100%; }
+  .ob__foot { flex-wrap: wrap; }
+  .ob__foot .sp { display: none; }
+  .ob__foot .btn { flex: 1; }
+  .ob-key .btn { flex: 1 1 100%; }
+}

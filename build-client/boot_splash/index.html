@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雷仔 · 启动</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #050507; overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  video { width: 100%; height: 100%; object-fit: cover; background: #050507; }
+  #ui { position: absolute; right: 24px; bottom: 24px; z-index: 3; display: flex; align-items: center; gap: 10px; }
+  #hint { color: #8A93A3; font: 13px/1.4 "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; cursor: pointer; user-select: none;
+          padding: 6px 10px; border-radius: 6px; background: rgba(5,5,7,.55); border: 1px solid rgba(0,229,255,.25); display: none; }
+  .btn { padding: 8px 14px; border: 1px solid rgba(0,229,255,.5); border-radius: 6px; background: rgba(5,5,7,.6);
+         color: #8A93A3; font: 13px/1.4 "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; cursor: pointer; }
+  .btn:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<!-- v6.55 外壳本地 splash 页（file://，零引擎依赖）：intro(一次) → loop(无限)，直到外壳撤层。
+     v6.56：支持音效——解静音自动播；被拒则静音回退 + 提示；静音/开启按钮；偏好记忆（localStorage 不可用则本次会话）。 -->
+<div id="wrap"><video id="v" autoplay playsinline preload="auto"></video></div>
+<div id="ui">
+  <span id="hint">🔊 点击开启声音</span>
+  <button id="mute" class="btn" type="button">🔇 静音</button>
+  <button id="skip" class="btn" type="button">跳过 ▶</button>
+</div>
+<script>
+(function () {
+  'use strict';
+  var INTRO = 'intro.mp4', LOOP = 'loop.mp4';
+  var LS_KEY = 'leizai.splash.muted';
+  var VOLUME = 0.6;
+  var v = document.getElementById('v'), skip = document.getElementById('skip'),
+      muteBtn = document.getElementById('mute'), hint = document.getElementById('hint');
+  var t0 = Date.now(), sent = {}, isLoop = false, prefMuted = null;   // prefMuted: null=未定 / true=静音 / false=开启
+
+  function post(op, extra) {
+    try {
+      if (window.chrome && window.chrome.webview && window.chrome.webview.postMessage) {
+        window.chrome.webview.postMessage(JSON.stringify(Object.assign({ op: op, ts: Date.now() }, extra || {})));
+      }
+    } catch (e) { }
+  }
+  function mark(phase) { if (sent[phase]) return; sent[phase] = 1; post('splashFrame', { phase: phase, since: Date.now() - t0 }); }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, val) { try { window.localStorage.setItem(k, val); } catch (e) { /* file:// 不可用 → 本次会话仅内存 */ } }
+
+  function showHint(on) { try { hint.style.display = on ? '' : 'none'; } catch (e) { } }
+  function setBtn(muted) { try { muteBtn.textContent = muted ? '🔊 开启声音' : '🔇 静音'; } catch (e) { } }
+
+  // 应用静音状态（不触发播放失败）；audio 异常一律静默
+  function applyMuted(m) {
+    prefMuted = m;
+    try { v.muted = m; } catch (e) { }
+    setBtn(m);
+    showHint(false);
+    lsSet(LS_KEY, m ? '1' : '0');
+  }
+
+  // 静音回退：立即静音继续播（不中断动画）+ 显示提示
+  function muteFallback(reason) {
+    try { v.muted = true; } catch (e) { }
+    prefMuted = true; setBtn(true); showHint(true);
+    post('splashAudio', { state: 'blocked', reason: reason || '' });
+    try { var p = v.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { }
+  }
+
+  function startPlayback() {
+    try { v.volume = VOLUME; } catch (e) { }
+    var stored = lsGet(LS_KEY);
+    var wantMuted = (stored === '1');
+    var canPersist = (stored !== null);
+    try { v.muted = wantMuted; } catch (e) { }
+    setBtn(wantMuted);
+    try {
+      v.src = INTRO;   // intro 先播（不循环）
+      var p = v.play();
+      if (p && p.then) {
+        p.then(function () {
+          // 自动播成功：若未显式静音偏好，则算"声音开"
+          if (!wantMuted) { prefMuted = false; setBtn(false); post('splashAudio', { state: 'on', persist: canPersist }); }
+        }).catch(function (e) {
+          var name = (e && e.name) || '';
+          if (name === 'NotAllowedError' && !wantMuted) { muteFallback('autoplay'); }   // 有声被拒 → 静音回退
+          else { muteFallback(name); }
+        });
+      }
+    } catch (e) { post('splashAudio', { state: 'blocked', reason: 'throw' }); }
+  }
+
+  // 用户切换
+  function toggleMute() {
+    var next = !(v.muted);
+    try { v.muted = next; } catch (e) { }
+    prefMuted = next; setBtn(next); showHint(false); lsSet(LS_KEY, next ? '1' : '0');
+    post('splashAudio', { state: next ? 'muted' : 'on', byUser: 1 });
+    if (!next) { try { var p = v.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { } }
+  }
+  function unmuteHint() { try { v.muted = false; } catch (e) { } prefMuted = false; setBtn(false); showHint(false); lsSet(LS_KEY, '0'); post('splashAudio', { state: 'on', byHint: 1 }); try { var p = v.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { } }
+
+  v.addEventListener('playing', function () { mark(isLoop ? 'loop' : 'intro'); });
+  v.addEventListener('ended', function () {
+    if (isLoop) return;
+    isLoop = true;
+    try { v.loop = true; v.src = LOOP; v.currentTime = 0; var p = v.play(); if (p && p.catch) p.catch(function () { muteFallback('loop-autoplay'); }); }
+    catch (e) { post('splashError', { name: 'loop-switch' }); }
+  });
+  v.addEventListener('error', function () { post('splashError', { name: 'video-error' }); });
+  skip.addEventListener('click', function () { skip.disabled = true; post('splashSkip', {}); });
+  muteBtn.addEventListener('click', toggleMute);
+  hint.addEventListener('click', unmuteHint);
+
+  // v6.57：外壳撤层时调用——立即停声/停播（防"进主界面后仍在响"）
+  window.__splashStop = function () {
+    try { v.pause(); } catch (e) { }
+    try { v.muted = true; } catch (e) { }
+    try { v.currentTime = 0; } catch (e) { }
+    try { v.removeAttribute('src'); v.load(); } catch (e) { }   // 释放解码/音频
+    try { if (window.chrome && window.chrome.webview && window.chrome.webview.postMessage) window.chrome.webview.postMessage(JSON.stringify({ op: 'splashStop', ts: Date.now() })); } catch (e) { }
+  };
+
+  startPlayback();
+})();
+</script>
+</body>
+</html>

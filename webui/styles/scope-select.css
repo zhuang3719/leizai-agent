@@ -1,0 +1,68 @@
+/* 会话级「模型 + 推理等级」选择器（雷影·美工）
+   位置：.composer__field 内、#composer-input 之后、#composer-stop/#btn-send 之前（按钮恒在最右）。
+   形态：**同一行**，两个选择器**共用一个外框**（分段控件：统一边框 + 中间竖向分隔线），整体高 ≤24px，不撑高输入框。
+   契约：会话级模型与推理等级_规格_20260922.md */
+
+/* 外层：统一边框容器（唯一 capsule），内部两段靠分隔线区分 —— 不是两个各自带框的独立胶囊 */
+.scope-sels {
+  display: flex; flex-direction: row; align-items: stretch;
+  flex: 0 0 auto;
+  /* 与发送按钮(30px)垂直居中：field 为 flex-end 底对齐，22px 容器上抬 (30-22)/2 = 4px */
+  align-self: flex-end; margin-bottom: 4px;
+  height: 22px; box-sizing: border-box;
+  background: var(--panel2);
+  border: 1px solid var(--border); border-radius: 7px;
+}
+
+.scope-sel { position: relative; display: flex; flex: 0 0 auto; }
+/* 中间竖向分隔线（1px，单线而非双边框） */
+.scope-sel + .scope-sel { border-left: 1px solid var(--border); }
+
+.scope-sel__btn {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 100%; box-sizing: border-box;
+  max-width: 150px; padding: 0 8px;
+  font: inherit; font-size: 11px; line-height: 1;
+  color: var(--text);
+  background: none; border: none; border-radius: 0;   /* 外框由 .scope-sels 承载 → 按钮自身无边框 */
+  cursor: pointer;
+  transition: background .14s, color .14s, box-shadow .14s;
+}
+/* 两端圆角与外框贴合 */
+.scope-sel:first-child .scope-sel__btn { border-radius: 6px 0 0 6px; }
+.scope-sel:last-child  .scope-sel__btn { border-radius: 0 6px 6px 0; }
+.scope-sel__btn:hover { background: var(--panel3); }
+.scope-sel__btn:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--acc); }
+.scope-sel__btn[aria-expanded="true"] { background: var(--panel3); box-shadow: inset 0 0 0 1px var(--acc); }
+/* 跟随全局：弱化配色（继承态视觉降级） + 右上角小圆点标记（一眼可辨「非本会话专属」） */
+.scope-sel__btn.is-follow { color: var(--dim); }
+.scope-sel__btn.is-follow::after {
+  content: ''; position: absolute; top: 2.5px; right: 2.5px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 0 1.5px var(--panel2), 0 0 4px color-mix(in srgb, var(--acc) 70%, transparent);
+  pointer-events: none;
+}
+.scope-sel__ico { flex: none; color: var(--acc); font-size: 10px; opacity: .9; }
+.scope-sel__btn.is-follow .scope-sel__ico { color: var(--dim2); }
+.scope-sel__val { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-sel__car { flex: none; font-size: 8px; color: var(--dim2); }
+
+/* 弹层：向上展开（锚定按钮右端），与 .popup 视觉一致 */
+.scope-pop {
+  position: absolute; bottom: calc(100% + 6px); right: 0;
+  min-width: 150px; max-width: 260px; max-height: 260px; overflow-y: auto;
+  z-index: 40;
+  padding: var(--sp-1);
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-card);
+  box-shadow: var(--sh-lift);
+}
+.scope-pop__item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 6px var(--sp-2); border-radius: 8px; cursor: pointer; font-size: 13px;
+}
+.scope-pop__item:hover, .scope-pop__item:focus-visible { background: var(--panel3); outline: none; }
+.scope-pop__item.is-cur { color: var(--acc); }
+.scope-pop__hint { margin-left: auto; font-size: 11px; color: var(--dim); }
+.scope-pop__mark { flex: none; width: 12px; text-align: center; color: var(--acc); }

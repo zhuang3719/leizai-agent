@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 通用「分身」图标：自定义角色未命中 ROLE_META 时的缺省 icon（D4） -->
+  <circle cx="12" cy="8" r="3.4"/>
+  <path d="M4.6 20.4c0-4 3.3-6.5 7.4-6.5s7.4 2.5 7.4 6.5"/>
+</svg>

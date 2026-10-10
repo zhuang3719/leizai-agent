@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚡ 雷仔 · 雷池中枢</title>
+<link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+<!-- 视觉层（雷影·美工）。JS 逻辑见 ./js/（雷影·程序员） -->
+<link rel="stylesheet" href="./styles/base.css">
+<link rel="stylesheet" href="./styles/themes.css">
+<link rel="stylesheet" href="./styles/layout.css">
+<link rel="stylesheet" href="./styles/components.css">
+<!-- 任务B（雷影·程序员）：模型服务不可用提示条，独立文件（勿并入 components.css） -->
+<link rel="stylesheet" href="./styles/llm-status.css">
+<!-- P2b-3（雷影·美工）：通讯任务脊 TaskSpine，独立文件（勿并入 components.css） -->
+<link rel="stylesheet" href="./styles/task-spine.css">
+<!-- 询问选项框 Ask Box（雷影·美工）：主我 ask_user 的选项卡片，独立文件（勿并入 components.css） -->
+<link rel="stylesheet" href="./styles/ask-box.css">
+<!-- 会话级「模型 + 推理等级」选择器（雷影·美工）：独立文件（勿并入 components.css） -->
+<link rel="stylesheet" href="./styles/scope-select.css">
+<link rel="stylesheet" href="./styles/tree.css">
+<!-- Pro 升级引导（雷影·美工）：独立文件（勿并入 components.css） -->
+<link rel="stylesheet" href="./styles/pro-upsell.css">
+<link rel="stylesheet" href="./styles/onboarding.css">
+
+<!-- Vue 免构建：浏览器 ESM 需 import map（执行说明书 V-4）。vendor 由程序员放 webui/vendor/ -->
+<script type="importmap">
+{
+  "imports": {
+    "vue": "./vendor/vue.esm-browser.js"
+  }
+}
+</script>
+</head>
+
+<body>
+<!--
+  ============================================================================
+  A1 P0 · index.html  结构骨架（雷影·美工 / T-D1）
+  ────────────────────────────────────────────────────────────────────────────
+  挂载方案：**分区挂载**（顶层 #app 与静态骨架不清空替换）。程序员对下列容器
+  分别 createApp(...).mount('#id')，共享 store.js 单例。
+  ────────────────────────────────────────────────────────────────────────────
+  【A · JS 挂载区（29 处）——样例已清空（空容器+注释），由程序员 mount 后填充】
+    #session-list #vitals #vital-model #thread-tabs #msg-stream #orbit #task-spine
+    #gen-rings #nexus-cards #agent-wall #mail-timeline #dispatch-panel
+    #pane-profile #pane-evolution #pane-memory #pane-skills #pane-growth #pane-archive
+    #goals-list #schedules-list #subagents-list #settings-nav #settings-form
+    #live-feed #vitals-mini #palette-list #toast-host #modal-host #tooltip
+  【B · 非挂载区（事件绑定 / 属性·文本更新，勿清空静态内容）】
+    #core-pulse(+#core-pulse-pct/#core-pulse-sub) #composer
+    #rail/.rail-btn[data-berth] #mirror-tabs #mode-toggle #btn-command #nexus-refresh
+    #btn-new-session #session-search #rail-feed-toggle #rail-spine-toggle #feed-close #vital-notify
+    #status-* #nexus-empty
+    .berth-classic-toggle[data-berth]（每舱经典视图子切换，P-7）
+    （注：#brand 品牌标题已于顶栏左侧恢复为 .brand「⚡ 雷仔」；#win-min/#win-max/#win-close 窗口三键由网页承载，见 .win-controls）
+  【C · 视觉类契约（JS 渲染内容时复用，以继承样式）】
+    #vitals 内层→.vital/.vital__value/.dot(.dot-online/.dot-busy)/.badge--pulse
+    #orbit 子树→.orbit/.orbit-edges/.orbit-edge/.orbit-node[data-role][data-state]/.orbit-node__pid/.orbit-node__label
+    #composer-popup 内层→.popup/.popup__item/.popup__group
+    #thread-tabs/#mirror-tabs→.subtabs/.subtab(.is-active)
+  ============================================================================
+-->
+<div id="app" class="app">
+
+  <!-- ══════════════ 任务B · 模型服务不可用常驻横幅（雷影·程序员；初始 hidden，由 js 控制） ══════════════ -->
+  <div id="llm-banner" class="llm-banner" hidden role="alert" aria-live="assertive"></div>
+
+  <!-- ══════════════ 顶栏 · 态势条 Vitals（T-D1） ══════════════ -->
+  <header id="titlebar" class="titlebar" role="banner">
+    <!-- 顶栏（单行 · 无边框窗口）：左侧 = 态势内容（模型/预算/命中/成本/余额/后端/通知），
+         右侧 = 窗口按钮（刷新/最小化/最大化/关闭）。软件外壳不再自绘标题栏，整行由网页承载，
+         顶部仅此一行。拖动/双击最大化由 js 经 bridge 回原生。 -->
+    <!-- 品牌标题（恢复：移壳时网页 #brand 与外壳原生标题栏双双删除 → 左上角空白） -->
+    <div class="brand" id="brand" aria-label="雷仔">
+      <img class="brand__glyph" src="./assets/logo.svg" alt="" aria-hidden="true" width="20" height="20"><span class="brand__name">雷仔</span><span id="brand-tier" class="brand__tier" hidden></span>
+    </div>
+
+    <div class="vitals">
+      <!-- 顶栏中段：模型徽标 + 全部态势指标。可伸缩；溢出时内部横向滚动（隐藏滚动条），
+           绝不把右侧「模式 / 命令 / 窗口控件」顶出视口。挂载点 #vital-model / #vitals 均在此容器内。 -->
+      <div class="titlebar__mid">
+        <!-- 挂载点 #vital-model：模型 / 推理级别（原在 .brand 内，迁入态势条左端保留展示） -->
+        <span class="vital vital--model" id="vital-model">deepseek · 推理 low</span>
+        <!-- 挂载点 #vitals：态势指标（命中率 / 成本 / 后端 / 通知）——内容由 Vue 渲染，勿在此容器内放静态节点 -->
+        <div id="vitals" class="vitals__mount">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+      </div>
+    </div>
+
+    <!-- 挂载点 #mode-toggle：双模式切换（P-1 全景↔经典，记忆偏好） -->
+    <button class="btn btn--ghost btn--sm" id="mode-toggle" title="全景 / 经典 视图切换（记忆偏好）">
+      <span class="icon icon--sm" style="--i:url(/assets/ui-toggle-mode.svg)"></span><span data-field="modeLabel">全景</span>
+    </button>
+    <!-- 挂载点 #btn-command：命令面板（Ctrl+K） -->
+    <button class="btn btn--ghost btn--sm" id="btn-command" title="命令面板 Ctrl+K">
+      <span class="icon icon--sm" style="--i:url(/assets/ui-search.svg)"></span><span class="kbd">Ctrl</span><span class="kbd">K</span>
+    </button>
+
+    <!-- 窗口按钮组（无边框：由网页承载，右端与态势同处一行）——由 app.js 绑 bridge.window
+         结构：刷新(网页功能，独立分组) | 分隔线 | 窗口三键(统一尺寸/图标，对齐整齐)。
+         四个按钮 id 保持不变，app.js 既有绑定与 bridge 逻辑不受影响。 -->
+    <div class="win-controls" id="win-controls">
+      <button class="win-btn win-btn--reload" id="win-reload" title="刷新 (F5)" aria-label="刷新">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5.5V11h-5.5"/></svg>
+      </button>
+      <span class="win-controls__sep" aria-hidden="true"></span>
+      <button class="win-btn" id="win-min" title="最小化" aria-label="最小化">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+      </button>
+      <button class="win-btn" id="win-max" title="最大化 / 还原" aria-label="最大化 / 还原">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
+      </button>
+      <button class="win-btn win-btn--close" id="win-close" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════ 工作区 · 三栏 ══════════════ -->
+  <div class="workspace">
+
+    <!-- ───── 左栏：图标轨 + 会话列表（T-D1） ───── -->
+    <aside class="col-side" aria-label="导航与会话">
+      <!-- 挂载点 .rail：六舱导航（Ctrl+1~6 对应 data-berth） -->
+      <nav class="rail" id="rail" aria-label="六舱">
+        <button class="rail-btn is-active" data-berth="nexus"  title="中枢 Nexus（Ctrl+1）"><span class="icon" style="--i:url(/assets/icon-nexus.svg)"></span></button>
+        <button class="rail-btn" data-berth="core"   title="核心 Core（Ctrl+2）"><span class="icon" style="--i:url(/assets/icon-core.svg)"></span></button>
+        <button class="rail-btn" data-berth="dock"   title="雷影 Dock（Ctrl+3）"><span class="icon" style="--i:url(/assets/icon-dock.svg)"></span></button>
+        <button class="rail-btn" data-berth="mirror" title="自省 Mirror（Ctrl+4）"><span class="icon" style="--i:url(/assets/icon-mirror.svg)"></span></button>
+        <button class="rail-btn" data-berth="forge"  title="任务坊 Forge（Ctrl+5）"><span class="icon" style="--i:url(/assets/icon-forge.svg)"></span></button>
+        <button class="rail-btn" data-berth="console" title="控制台 Console（Ctrl+6）"><span class="icon" style="--i:url(/assets/icon-console.svg)"></span></button>
+        <span class="rail-spacer"></span>
+        <!-- 挂载点 #rail-feed-toggle：窄窗下开合右栏抽屉（P-6） -->
+        <button class="rail-btn" id="rail-feed-toggle" title="实时态势"><span class="icon" style="--i:url(/assets/ui-list.svg)"></span></button>
+        <!-- 挂载点 #rail-spine-toggle：开合"通讯任务脊"侧栏（默认隐藏；宽屏网格列 / 窄屏抽屉） -->
+        <button class="rail-btn" id="rail-spine-toggle" title="通讯任务脊" aria-controls="col-spine" aria-expanded="false"><span class="icon" style="--i:url(/assets/ui-spine.svg)"></span></button>
+        <!-- 版本号常驻（左下角；点击 → 控制台·关于） -->
+        <button class="rail-ver" id="rail-ver" type="button" title="当前版本 · 点击查看关于" aria-label="当前版本">v—</button>
+      </nav>
+
+      <!-- 挂载点 #sessions：会话列表（Core 舱的线程索引 + 全局会话） -->
+      <section class="sessions-panel" id="sessions" aria-label="会话列表">
+        <div class="sessions-head">
+          <h2>会话</h2>
+          <button class="btn btn--ghost btn--sm" id="btn-new-session" title="新建会话"><span class="icon icon--sm" style="--i:url(/assets/ui-plus.svg)"></span></button>
+        </div>
+        <div class="search-box">
+          <span class="icon icon--sm" style="--i:url(/assets/ui-search.svg)"></span>
+          <input id="session-search" type="search" placeholder="搜索会话…" aria-label="搜索会话">
+        </div>
+        <!-- 挂载点 #session-list：JS 渲染 .session-item -->
+        <div class="session-list" id="session-list" role="listbox">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+      </section>
+    </aside>
+
+    <!-- ───── 中栏：六视图主区（T-D1） ───── -->
+    <main class="col-main main" id="main">
+
+      <!-- ┌── ① 中枢 Nexus（L0 全景，默认首页）── T-D5 ──┐ -->
+      <section class="berth is-active" data-berth="nexus" aria-label="中枢">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-nexus.svg)"></span>
+          <span class="berth-head__title">中枢</span>
+          <span class="berth-head__desc">雷池全景 · 池心 / 环流 / 涟漪 / 年轮</span>
+          <div class="berth-head__actions">
+            <!-- 挂载点 #nexus-refresh -->
+            <button class="btn btn--ghost btn--sm" id="nexus-refresh">刷新态势</button>
+            <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+            <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="nexus" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          </div>
+        </div>
+
+        <div class="berth-body" style="padding:0; overflow:hidden;">
+          <div class="nexus" id="nexus">
+            <!-- 池心画布：池心脉冲环 + 环流 -->
+            <div class="nexus-canvas" id="nexus-canvas">
+              <!-- 挂载点 #core-pulse：池心脉冲环（JS 更新 --pct / data-activity / data-level / data-empty） -->
+              <div class="core-pulse" id="core-pulse" data-activity="idle" data-level="ok" style="--pct:42">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="pulse-track"  cx="50" cy="50" r="42" pathLength="100"/>
+                  <circle class="pulse-ring"   cx="50" cy="50" r="42" pathLength="100"/>
+                  <circle class="pulse-ticks"  cx="50" cy="50" r="32" pathLength="100"/>
+                  <circle class="pulse-core"   cx="50" cy="50" r="23"/>
+                </svg>
+                <div class="core-pulse__center">
+                  <!-- P-5 数据密度：中心必显预算百分比 -->
+                  <div class="core-pulse__pct" id="core-pulse-pct">42%</div>
+                  <div class="core-pulse__label">预算占用</div>
+                  <div class="core-pulse__sub" id="core-pulse-sub">128k / 300k · 命中 92%</div>
+                </div>
+              </div>
+
+              <!-- 挂载点 #orbit：环流节点（JS 渲染 .orbit-node[data-role][data-state]，给 --x/--y） -->
+              <div class="orbit-wrap">
+                <div class="orbit" id="orbit">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+              </div>
+
+              <!-- 空生态引导（P-3，默认隐藏） -->
+              <div class="guide" id="nexus-empty" hidden>
+                <div class="card__title">池心待激活</div>
+                <div class="dim">还没有雷影在环流上运行 —— 三步开始你的生态</div>
+                <div class="guide__steps">
+                  <div class="guide__step card"><div class="guide__num">1</div><div class="card__title">拉起后端</div><div class="card__sub">启动 3457 主引擎</div></div>
+                  <div class="guide__step card"><div class="guide__num">2</div><div class="card__title">认识雷影</div><div class="card__sub">环流上点亮你的第一个雷影</div></div>
+                  <div class="guide__step card"><div class="guide__num">3</div><div class="card__title">开始第一件事</div><div class="card__sub">在核心舱开一条任务线程</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 世代年轮（底部横向带） -->
+            <!-- 挂载点 #gen-rings：JS 渲染 .gen-lane / .gen-seg -->
+            <div class="gen-rings" id="gen-rings" aria-label="世代年轮">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+
+            <!-- 平铺卡片墙（P-6 窄窗降级 / P-1 经典模式；默认隐藏） -->
+            <div class="nexus-cards" id="nexus-cards">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌── ② 核心 Core（池心对话 · 世代交接 · 雷影协同）── T-D3 ──┐ -->
+      <section class="berth" data-berth="core" aria-label="核心">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-core.svg)"></span>
+          <span class="berth-head__title">核心</span>
+          <!-- 雷影协同开关：控制"自动领域分流"总开闭（分流/会诊/灰区提示）；状态持久化 config.roleDispatchEnabled -->
+          <button class="berth-toggle" id="berth-toggle-dispatch" type="button" role="switch" aria-checked="true"
+                  title="雷影协同 · 自动领域分流（含会诊/灰区提示）">
+            <span class="berth-toggle__ico icon icon--sm" style="--i:url(/assets/ui-spine.svg)"></span>
+            <span class="berth-toggle__label">雷影协同</span>
+            <span class="berth-toggle__track"><span class="berth-toggle__knob"></span></span>
+          </button>
+          <div class="berth-head__actions">
+            <!-- 挂载点 #thread-tabs：本会话雷影栏（SessionAgents，JS 渲染 .agent-chip[data-role][data-state]） -->
+            <div class="subtabs" id="thread-tabs">
+              <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+            </div>
+            <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+            <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="core" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          </div>
+          <!-- 会话树浮标（雷影·美工）：漂浮在聊天窗口右上角 → 打开本会话泳道图浮层（复用 PaneTree，禁止重写泳道逻辑） -->
+          <button class="tree-fab" id="btn-session-tree" type="button" title="会话树（本会话）" aria-label="会话树（本会话）"><span class="icon" style="--i:url(/assets/icon-tree.svg)"></span></button>
+        </div>
+
+        <!-- 挂载点 #msg-stream：消息流（JS 渲染 bubble / tool-card / think-card / handoff-card / gen-divider） -->
+        <div class="msg-stream" id="msg-stream">
+          <!-- 样例：本代交接文档卡 -->
+          <div class="handoff-card is-open" data-kind="handoff">
+            <div class="handoff-card__head">
+              <span class="icon icon--sm" style="--i:url(/assets/ui-archive.svg)"></span>📋 本代交接文档 · 第 14 代
+            </div>
+            <div class="handoff-card__body">
+              <div class="handoff-card__sec"><h4>原始目标</h4><div class="dim">重做以智能体生态为中心的新客户端……</div></div>
+              <div class="handoff-card__sec"><h4>本代未完成</h4><div class="dim">（无）</div></div>
+              <div class="handoff-card__sec"><h4>归档索引</h4><div class="dim">本次归档 334 条消息（第 14 代）</div></div>
+            </div>
+          </div>
+          <!-- 样例：世代分隔条 -->
+          <div class="gen-divider" data-gen="14"><img class="gen-divider__logo" src="./assets/logo.svg" alt="" aria-hidden="true">第 14 代交接 · 归档 334 条</div>
+          <!-- 样例：思考块 -->
+          <div class="think-card" data-kind="think">
+            <div class="think-card__head">💭 思考中…（点击展开）</div>
+            <div class="think-card__body">先核对归档与进度文件，再回答……</div>
+          </div>
+          <!-- 样例：助手气泡 -->
+          <div class="bubble bubble-ai" data-role="main">
+            <div class="bubble__meta"><img class="bubble__logo" src="./assets/logo.svg" alt="" aria-hidden="true">雷仔 · 主我</div>
+            文档已读完，开始动手。
+          </div>
+          <!-- 样例：工具调用卡 -->
+          <div class="tool-card" data-tool="run_command">
+            <div class="tool-card__head">
+              <span class="dot dot-online"></span>
+              <span class="tool-card__name">run_command</span>
+              <span class="tool-card__summary">node --check src/server.js</span>
+              <span class="icon icon--sm tool-card__chev" style="--i:url(/assets/ui-chevron.svg)"></span>
+            </div>
+            <div class="tool-card__body"><div class="tool-term">
+<span class="diff-add">+ ok</span>
+<span class="diff-del">- 0 errors</span>
+            </div></div>
+          </div>
+          <!-- 样例：用户气泡 -->
+          <div class="bubble bubble-user" data-role="user">
+            <div class="bubble__meta">主人</div>
+            开工。
+          </div>
+          <!-- 样例：流式助手气泡 -->
+          <div class="bubble bubble-ai bubble--streaming" data-role="main">
+            <div class="bubble__meta"><img class="bubble__logo" src="./assets/logo.svg" alt="" aria-hidden="true">雷仔 · 主我</div>
+            正在渲染视觉骨架<span class="sr-only">（流式中）</span>
+          </div>
+        </div>
+
+        <!-- 挂载点 #live-status：状态提示条（能量核心风）——锚定输入框上方、消息流滚动区之外，滚动时位置不动（core.js Teleport 渲染） -->
+        <div class="live-status" id="live-status"></div>
+
+        <!-- P3 Pro 升级引导卡（可关闭内联卡；输入区上方、消息流之外；JS 挂载 #pro-upgrade-nudge） -->
+        <div id="pro-upgrade-nudge" class="pro-nudge" hidden></div>
+        <!-- 挂载点 #composer：输入区（@ 提及、粘贴图片） -->
+        <div class="composer" id="composer">
+          <!-- 挂载点 #ask-box-host：主我询问选项卡片（SSE ask-user 渲染；见 js/views/askbox.js） -->
+          <div class="ask-box-host" id="ask-box-host"></div>
+          <!-- 挂载点 #composer-popup：@ 提及 补全弹层（默认 hidden；JS 用 .is-open + 渲染 .popup__item） -->
+          <div class="popup" id="composer-popup" hidden role="listbox" aria-label="命令 / 提及 补全"></div>
+          <div class="composer__field">
+            <button class="btn btn--icon composer__clip" id="composer-clip" type="button" title="添加附件（双击输入区 / 拖拽文件亦可）" aria-label="添加附件">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6 11.9 20.2a5.2 5.2 0 0 1-7.4-7.4l8.9-8.9a3.5 3.5 0 0 1 4.9 4.9l-8.9 8.9a1.7 1.7 0 0 1-2.4-2.4l8.1-8.1"/></svg>
+            </button>
+            <textarea id="composer-input" rows="1" placeholder="输入消息…  @通知其他会话   （可粘贴图片 / 拖拽文件 / 双击添加）"></textarea>
+            <!-- 挂载点 #composer-stop：流式"停止生成"按钮（默认 hidden，流式中 JS 移除 hidden） -->
+            <button class="btn btn--danger btn--icon" id="composer-stop" title="停止生成" hidden>
+              <span class="icon icon--sm" style="--i:url(/assets/ui-stop.svg)"></span>
+            </button>
+            <button class="btn btn--primary btn--icon" id="btn-send" title="发送（Enter）">
+              <span class="icon icon--sm" style="--i:url(/assets/ui-send.svg)"></span>
+            </button>
+          </div>
+          <!-- 附件（雷影·美工 v6.60）：隐藏文件选择 + 整窗拖拽遮罩 -->
+          <input type="file" id="composer-file" multiple hidden>
+          <div class="drop-mask" id="drop-mask" hidden aria-hidden="true">
+            <div class="drop-mask__box">松手即添加文件</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌── ③ 雷影 Dock（节点坞 + 工作台）── T-D3 ──┐ -->
+      <section class="berth" data-berth="dock" aria-label="雷影">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-dock.svg)"></span>
+          <span class="berth-head__title">雷影</span>
+          <span class="berth-head__desc">节点坞 · 工作台 · 信箱涟漪</span>
+          <div class="berth-head__actions">
+            <!-- P2 创建雷影：舱头右上入口 + 已用/上限 -->
+            <span id="pro-roles-quota" class="berth-head__desc" style="margin-right:8px;opacity:.8;"></span>
+            <button id="btn-create-agent" class="btn btn--primary btn--sm" title="创建雷影">＋ 创建雷影</button>
+            <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+            <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="dock" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          </div>
+        </div>
+        <div class="berth-body">
+          <!-- 挂载点 #agent-wall：雷影卡片墙 -->
+          <h3 class="card__sub" style="margin-bottom:8px;">雷影矩阵</h3>
+          <div class="card-grid" id="agent-wall">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+
+          <hr class="sep">
+          <div style="display:grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap:var(--sp-4); align-items:start;">
+            <!-- 挂载点 #mail-timeline：信箱时间线 -->
+            <div>
+              <h3 class="card__sub" style="margin-bottom:8px;">信箱涟漪</h3>
+              <div class="timeline" id="mail-timeline">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+            </div>
+            <!-- 挂载点 #dispatch-panel：派活面板 -->
+            <div class="card" id="dispatch-panel">
+              <div class="card__title" style="margin-bottom:8px;">派活</div>
+              <div class="card-list">
+                <select class="select" id="dispatch-role" aria-label="目标雷影">
+                  <option value="programmer">● 程序员</option>
+                  <option value="designer">● 美工</option>
+                  <option value="writer">● 文案</option>
+                  <option value="sales">● 销售</option>
+                  <option value="editor">● 剪辑师</option>
+                </select>
+                <select class="select" id="dispatch-type" aria-label="消息类型">
+                  <option value="task">task</option><option value="reply">reply</option><option value="notify">notify</option>
+                </select>
+                <textarea class="input" id="dispatch-text" rows="4" style="height:auto;padding:8px;" placeholder="派活内容…"></textarea>
+                <button class="btn btn--primary" id="dispatch-send">发送</button>
+              </div>
+            </div>
+          </div>
+
+          <hr class="sep">
+          <!-- 挂载点 #comm-center：通讯中心（概览卡 / 全部往来流水 / 逾期·死信重投） -->
+          <section class="comm-center" id="comm-center" aria-label="通讯中心">
+            <!-- JS 挂载点：Vue 组件渲染区（由 app.js mount CommCenter 填充） -->
+          </section>
+        </div>
+      </section>
+
+      <!-- ┌── ④ 自省 Mirror ── T-D3 ──┐ -->
+      <section class="berth" data-berth="mirror" aria-label="自省">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-mirror.svg)"></span>
+          <span class="berth-head__title">自省</span>
+          <span class="berth-head__desc">画像 / 进化 / 记忆 / 技能 / 成长 / 世代</span>
+          <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+          <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="mirror" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          <!-- 挂载点 #mirror-tabs：子导航（P-7 双入口） -->
+          <div class="berth-head__actions subtabs" id="mirror-tabs">
+            <button class="subtab is-active" data-pane="profile">画像</button>
+            <button class="subtab" data-pane="evolution">进化</button>
+            <button class="subtab" data-pane="memory">记忆</button>
+            <button class="subtab" data-pane="skills">技能</button>
+            <button class="subtab" data-pane="growth">成长</button>
+            <button class="subtab" data-pane="archive">世代</button>
+            <button class="subtab" data-pane="tree">树</button>
+          </div>
+        </div>
+        <div class="berth-body">
+          <!-- 挂载点 #pane-profile -->
+          <div class="mirror-pane" id="pane-profile" data-pane="profile">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <!-- 挂载点 #pane-evolution -->
+          <div class="mirror-pane" id="pane-evolution" data-pane="evolution" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <!-- 挂载点 #pane-memory / #pane-skills / #pane-growth / #pane-archive -->
+          <div class="mirror-pane" id="pane-memory" data-pane="memory" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <div class="mirror-pane" id="pane-skills" data-pane="skills" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <div class="mirror-pane" id="pane-growth" data-pane="growth" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <div class="mirror-pane" id="pane-archive" data-pane="archive" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+          <!-- 挂载点 #pane-tree：会话树泳道图（美工） -->
+          <div class="mirror-pane" id="pane-tree" data-pane="tree" hidden>
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌── ⑤ 任务坊 Forge ── T-D3 ──┐ -->
+      <section class="berth" data-berth="forge" aria-label="任务坊">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-forge.svg)"></span>
+          <span class="berth-head__title">任务坊</span>
+          <span class="berth-head__desc">自治目标 / 心跳定时 / 子智能体</span>
+          <div class="berth-head__actions">
+            <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+            <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="forge" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          </div>
+        </div>
+        <div class="berth-body">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:var(--sp-4);">
+            <div><h3 class="card__sub" style="margin-bottom:8px;">自治目标</h3><div class="card-list" id="goals-list">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div></div>
+            <div><h3 class="card__sub" style="margin-bottom:8px;">心跳 / 定时</h3><div class="card-list" id="schedules-list">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div></div>
+            <div><h3 class="card__sub" style="margin-bottom:8px;">子智能体</h3><div class="card-list" id="subagents-list">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌── ⑥ 控制台 Console ── T-D3 ──┐ -->
+      <section class="berth" data-berth="console" aria-label="控制台">
+        <div class="berth-head">
+          <span class="berth-head__icon icon" style="--i:url(/assets/icon-console.svg)"></span>
+          <span class="berth-head__title">控制台</span>
+          <span class="berth-head__desc">大模型配置 / 权限 / 后端</span>
+          <div class="berth-head__actions">
+            <!-- 挂载点 .berth-classic-toggle：经典视图子切换（P-7 双入口） -->
+            <button class="btn btn--ghost btn--sm berth-classic-toggle" data-berth="console" title="经典视图（列表模式）"><span class="icon icon--sm" style="--i:url(/assets/ui-list.svg)"></span></button>
+          </div>
+        </div>
+        <div class="berth-body console-grid">
+          <!-- 挂载点 #settings-nav -->
+          <nav class="set-nav" id="settings-nav">
+            <button class="set-nav__item is-active" data-pane="model">大模型配置</button>
+            <button class="set-nav__item" data-pane="perm">权限</button>
+            <button class="set-nav__item" data-pane="backend">后端与数据</button>
+          </nav>
+          <!-- 挂载点 #settings-form -->
+          <div id="settings-form" class="set-col">
+            <!-- 表单内容由 Vue(SettingsForm) 挂载接管；「首次配置建议」提示现由组件按 keyPresence 条件渲染，故此处不再放静态副本，避免重复/残留 -->
+            <div class="set-group"><h4 class="set-group__title">模型与推理<span class="set-group__desc">决定用哪个模型、思考多深</span></h4>
+              <div class="form-row"><div class="form-row__label">模型</div><div><select class="select"><option>deepseek-chat</option></select><div class="form-row__hint">当前使用的模型；切换后对新回合生效。</div></div></div>
+              <div class="form-row"><div class="form-row__label">推理级别</div><div><select class="select"><option>低（推荐 · 快且省）</option><option>中</option><option>高</option><option>最高</option></select><div class="form-row__hint">越高越聪明、但更贵更慢。<span class="badge-reco">推荐：低</span></div></div></div>
+            </div>
+            <div class="set-group"><h4 class="set-group__title">预算<span class="set-group__desc">新建会话的默认上下文额度</span></h4>
+              <div class="form-row"><div class="form-row__label">全局默认预算</div><div><input class="input" placeholder="跟随全局"><div class="form-row__hint">新建会话的默认额度；单个会话可另行覆盖。</div></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ───── 中右栏：通讯任务脊（可折叠侧边栏，位于聊天窗与实时态势之间；默认隐藏）───── -->
+    <aside class="col-spine" id="col-spine" aria-label="通讯任务脊">
+      <!-- 挂载点 #task-spine：通讯任务脊 TaskSpine（P2b-3 · 雷影·美工；竖轴+任务卡+汇总条，下钻 commcenter） -->
+      <div id="task-spine"></div>
+    </aside>
+
+    <!-- ───── 右栏：实时态势（运行指标 + 涟漪流）───── -->
+    <aside class="col-feed" id="col-feed" aria-label="实时态势">
+      <div class="feed-head">
+        <h2>实时态势</h2>
+        <!-- 挂载点 #feed-close：窄窗抽屉关闭 -->
+        <button class="btn btn--ghost btn--icon btn--sm" id="feed-close" title="收起" style="margin-left:auto; display:none;">
+          <span class="icon icon--sm" style="--i:url(/assets/ui-chevron.svg)"></span>
+        </button>
+      </div>
+      <div class="feed-body">
+        <!-- 挂载点 #vitals-mini：运行指标（VitalsMini 渲染；下方为 mount 前静态占位，mount 后被替换） -->
+        <section class="card" id="vitals-mini">
+          <div class="card__head">
+            <span class="card__title">运行指标</span>
+          </div>
+          <div class="vm-grid">
+            <div class="vm-cell vm-cell--cost"><span class="vm-cell__label">成本</span><span class="vm-cell__value">¥0.012</span></div>
+            <div class="vm-cell vm-cell--hit"><span class="vm-cell__label">命中率</span><span class="vm-cell__value">92<i class="vm-cell__unit">%</i></span></div>
+            <div class="vm-cell vm-cell--calls"><span class="vm-cell__label">调用</span><span class="vm-cell__value">137</span></div>
+          </div>
+          <div class="vm-usage">
+            <div class="vm-usage__head"><span class="vm-usage__label">上下文用量</span><span class="vm-usage__num mono">42k / 150k · 28%</span></div>
+            <div class="progress" data-level="ok"><div class="progress__fill" style="width:28%"></div></div>
+          </div>
+          <div class="vm-tokens">
+            <span class="vm-tok vm-tok--hit"><b>↑12k</b><em>命中</em></span>
+            <span class="vm-tok vm-tok--miss"><b>↓3k</b><em>未命中</em></span>
+            <span class="vm-tok vm-tok--out"><b>⤴8k</b><em>输出</em></span>
+          </div>
+          <svg class="vm-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="vmSparkStroke0" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="vm-spark-stop-a"/><stop offset="1" class="vm-spark-stop-b"/></linearGradient>
+              <linearGradient id="vmSparkFill0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="vm-spark-fill-a"/><stop offset="1" class="vm-spark-fill-b"/></linearGradient>
+            </defs>
+            <polygon class="vm-spark__area" points="0,32 0,17 20,11 40,14 60,8 80,10 100,4 100,32" fill="url(#vmSparkFill0)" stroke="none"/>
+            <polyline class="vm-spark__line" points="0,17 20,11 40,14 60,8 80,10 100,4" fill="none" stroke="url(#vmSparkStroke0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+        </section>
+        <!-- 挂载点 #live-feed：涟漪流（/api/events 聚合，JS 渲染 .ripple-item）
+             注：.feed-block 使涟漪流区自身限高、内部滚动，运行指标固定在其上方不被顶走 -->
+        <section class="feed-block" aria-label="涟漪流">
+          <h3 class="card__sub" style="margin-bottom:8px;">涟漪流</h3>
+          <div class="ripple-feed" id="live-feed">
+            <!-- JS 挂载点：Vue 组件渲染区（样例已清空；由程序员 mount 后填充） -->
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ══════════════ 底部状态条 ══════════════ -->
+  <footer class="statusbar" id="statusbar">
+    <span id="status-text">就绪</span>
+    <div class="statusbar__right">
+      <span class="mono" id="status-mode">全景 · 中枢</span>
+      <span class="mono" id="status-session">s-mts9v1cf-ozxj</span>
+      <span class="mono" id="status-conn"><span class="dot dot-online"></span> SSE 已连接</span>
+    </div>
+  </footer>
+</div>
+
+<!-- ══════════════ 覆盖层 ══════════════ -->
+<!-- 挂载点 #toast-host：Toast -->
+<div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+<!-- 挂载点 #palette：命令面板（Ctrl+K，所有层的任意门） -->
+<div class="palette-mask" id="palette-mask" role="dialog" aria-modal="true" aria-label="命令面板">
+  <div class="palette">
+    <input id="palette-input" placeholder="搜索命令、会话、雷影、记忆…" aria-label="命令面板输入">
+    <div class="palette__list" id="palette-list">
+      <div class="palette__opt"><span class="icon icon--sm" style="--i:url(/assets/icon-nexus.svg)"></span>前往 中枢<span class="kbd">1</span></div>
+      <div class="palette__opt"><span class="icon icon--sm" style="--i:url(/assets/icon-core.svg)"></span>前往 核心<span class="kbd">2</span></div>
+      <div class="palette__opt"><span class="icon icon--sm" style="--i:url(/assets/icon-dock.svg)"></span>前往 雷影<span class="kbd">3</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 挂载点 #modal-host：模态（通用） -->
+<div class="modal-mask" id="modal-host" role="dialog" aria-modal="true"></div>
+
+<!-- 挂载点 #tooltip：全局 tooltip -->
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+
+<!-- 逻辑层（雷影·程序员）：入口 app.js。样式/结构勿在此处改动 -->
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+/* ============================================================
+   themes.css — 暗色雷系主题层 / 角色色 / 低动态·无障碍降级 / 经典模式
+   依据：视觉规格 §0.1、§七；界面范式 §9 P-1/P-2/P-6
+   ============================================================ */
+
+/* ---------- 应用底纹：池水暗涌（静态渐变，无动画成本） ---------- */
+.app {
+  background:
+    radial-gradient(1200px 700px at 50% 42%, rgba(0, 229, 255, .045), transparent 62%),
+    radial-gradient(900px 600px at 12% 88%, rgba(124, 77, 255, .05), transparent 60%),
+    var(--bg);
+}
+
+/* ---------- 角色色工具类（P-2 色盲友好：色 + 图标/首字双通道） ---------- */
+.role-programmer { --role: var(--role-programmer); }
+.role-artist     { --role: var(--role-artist); }
+.role-writer     { --role: var(--role-writer); }
+.role-tester     { --role: var(--role-tester); }
+.role-main       { --role: var(--role-main); }
+.role-researcher { --role: var(--role-researcher); }
+.role-sales      { --role: var(--role-sales); }
+.role-editor     { --role: var(--role-editor); }
+
+.chip[class*="role-"] {
+  color: var(--role);
+  border-color: color-mix(in srgb, var(--role) 38%, transparent);
+  background: color-mix(in srgb, var(--role) 12%, transparent);
+}
+.dot[class*="role-"] { background: var(--role); }
+.bar-fill[class*="role-"] { background: var(--role); }
+
+/* 角色头像环（色盲兜底：内嵌首字/图标） */
+.avatar { border-color: color-mix(in srgb, var(--role, var(--acc)) 55%, transparent); }
+.avatar .avatar-glyph { color: var(--role, var(--acc)); }
+
+/* ---------- 状态色 ---------- */
+.is-ok   { color: var(--ok); }
+.is-warn { color: var(--warn); }
+.is-err  { color: var(--err); }
+.is-acc  { color: var(--acc); }
+
+/* ---------- 经典模式（P-1）：同色板，去掉空间化装饰 ---------- */
+.app.mode-classic .nexus-canvas,
+.app.mode-classic .orbit-wrap,
+.app.mode-classic .gen-rings-space { display: none !important; }
+.app.mode-classic .nexus-cards { display: grid !important; }
+.app.mode-classic .berth { animation: none !important; }
+
+/* ============================================================
+   低动态 / 无障碍（P-2）
+   ① 系统 prefers-reduced-motion ② 手动 .app.no-motion
+   关闭呼吸/脉冲/流动，保留静态状态色（仍可辨状态）
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.app.no-motion *, .app.no-motion *::before, .app.no-motion *::after {
+  animation: none !important;
+  transition-duration: .001ms !important;
+}
+
+/* 关动画后，动效承载的状态改用静态视觉表达（保证"状态可辨"） */
+.app.no-motion .dot-online { box-shadow: 0 0 0 3px rgba(43, 224, 136, .22); }
+.app.no-motion .dot-error  { box-shadow: 0 0 0 3px rgba(255, 77, 109, .25); }
+.app.no-motion .orbit-node[data-state="busy"] { outline: 2px dashed var(--warn); outline-offset: 3px; }
+.app.no-motion .orbit-node[data-state="error"] { outline: 2px solid var(--err); outline-offset: 3px; }
+.app.no-motion .core-pulse[data-activity="thinking"] .pulse-core { stroke: var(--acc); stroke-dasharray: 4 3; }
+.app.no-motion .core-pulse[data-activity="tool"]     .pulse-core { stroke: var(--warn); stroke-dasharray: 2 2; }
+.app.no-motion .badge-pulse::after { display: none; }
+
+/* 高对比（可选）：系统开启时加强描边 */
+@media (prefers-contrast: more) {
+  :root { --border: #33333F; --dim: #9A9AAC; }
+  .card { border-color: #3A3A48; }
+}

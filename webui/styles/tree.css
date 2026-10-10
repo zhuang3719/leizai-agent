@@ -1,0 +1,249 @@
+/* 会话树 · 泳道图（雷影·美工）
+   主轴时间线 + 每条分枝一条泳道；x 轴=轮次(turn_no)，节点按 kind 着色/造形。
+   大枝（如 361 事件）用「按列分桶聚合」杜绝重叠糊成一团。 */
+
+.tree-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+/* 工具条：kind 筛选 chips + 图例 */
+.tree-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tree-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tree-chip {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  font-size: 11.5px; color: var(--dim); padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--panel2);
+  transition: color .14s, border-color .14s, background .14s;
+}
+.tree-chip:hover { color: var(--text); border-color: var(--border2); }
+.tree-chip.is-on { color: var(--text); border-color: var(--border2); background: rgba(255,255,255,.06); }
+.tree-chip__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--k); box-shadow: 0 0 6px var(--k); flex: none; }
+.tree-chip__dot--sq { border-radius: 2px; }
+.tree-chip__dot--star { border-radius: 50%; clip-path: polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+.tree-chip__n { color: var(--dim2); }
+
+.tree-legend { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 11px; color: var(--dim2); }
+.tree-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* 滚动画布 */
+.tree-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; }
+.tree-canvas { min-width: 100%; }
+
+/* 轴刻度 */
+.tree-axis { display: flex; align-items: center; gap: 8px; padding: 0 0 4px; }
+.tree-axis__spacer { flex: 0 0 var(--lane-head-w, 132px); }
+.tree-axis__track { position: relative; flex: 1; height: 16px; border-bottom: 1px dashed var(--border); }
+.tree-axis__tick { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--dim2); white-space: nowrap; }
+
+/* 泳道 */
+.tree-lane { display: flex; align-items: stretch; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.tree-lane:hover { background: var(--panel3); }
+.tree-lane.is-dim { opacity: .32; }
+.tree-lane__head {
+  flex: 0 0 var(--lane-head-w, 132px); width: var(--lane-head-w, 132px);
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  cursor: pointer; min-width: 0;
+}
+.tree-lane__title { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree-lane__meta { font-size: 10.5px; color: var(--dim2); white-space: nowrap; }
+.tree-lane__title.is-main { color: var(--acc2); font-weight: 600; }
+.tree-lane__track {
+  position: relative; flex: 1; min-height: 26px; align-self: stretch;
+  background: linear-gradient(180deg, rgba(255,255,255,.012), transparent);
+  border-radius: 6px;
+}
+.tree-lane__track.is-main { background: linear-gradient(90deg, rgba(0,229,255,.06), transparent); }
+/* 主轴连接线 */
+.tree-lane__track.is-main::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,.5), rgba(0,229,255,.5), transparent);
+}
+
+/* 节点标记 */
+.tree-node {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid rgba(0,0,0,.35); background: var(--k);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--k) 65%, transparent);
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.tree-node:hover { transform: translate(-50%, -50%) scale(1.28); box-shadow: 0 0 12px var(--k); z-index: 3; }
+.tree-node.is-sel { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--k); z-index: 4; }
+.tree-node--dot { border-radius: 50%; }          /* turn */
+.tree-node--sq { border-radius: 3px; }           /* decision */
+.tree-node--note { border-radius: 50%; background: transparent; border: 2px solid var(--k); }
+.tree-node--star { border-radius: 50%; clip-path: polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+.tree-node--goal { border-radius: 2px 2px 5px 5px; }
+.tree-node__n {
+  font-size: 9px; color: #001417; font-weight: 700; line-height: 1;
+  text-shadow: 0 0 2px rgba(255,255,255,.6);
+}
+.tree-node--note .tree-node__n { color: var(--k); text-shadow: none; }
+
+/* 下钻详情面板 */
+.tree-detail {
+  border: 1px solid var(--border2); border-radius: 10px; background: var(--panel2);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.tree-detail__head { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); }
+.tree-detail__item { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+.tree-detail__turn { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--acc2); flex: none; }
+.tree-detail__title { color: var(--text); min-width: 0; }
+.tree-detail__close { margin-left: auto; }
+
+.tree-empty { padding: 22px 8px; text-align: center; color: var(--dim2); font-size: 12.5px; }
+.tree-loading { padding: 18px 8px; text-align: center; color: var(--dim2); font-size: 12.5px; }
+
+
+/* ── 会话树浮标（漂浮在聊天窗口右上角） ─────────────────────────────
+   锚点：核心舱 .berth-head 设 position:relative；浮标 absolute，top:calc(100%+8px) 紧贴头部下方、
+   右对齐 → 恒定悬浮于消息流右上角，消息滚动时不动（浮标在滚动容器 .msg-stream 之外）。
+   玻璃质感 + 半透明，悬停高亮；与既有设计语言（--panel/--border/--acc）一致。 */
+section.berth[data-berth="core"] > .berth-head { position: relative; }
+
+.tree-fab {
+  position: absolute; right: var(--sp-3); top: calc(100% + 8px); z-index: 6;
+  width: 30px; height: 30px; padding: 0; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 9px; cursor: pointer;
+  color: var(--dim);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  opacity: .62;
+  transition: opacity .16s var(--ease), color .16s, border-color .16s,
+              background .16s, box-shadow .16s;
+}
+.tree-fab .icon { width: 15px; height: 15px; }
+.tree-fab:hover {
+  opacity: 1; color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 45%, var(--border));
+  background: rgba(0,229,255,.10);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 30%, transparent);
+}
+.tree-fab:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--acc); }
+.tree-fab:active { transform: translateY(1px); }
+
+/* 浮层内的树/泳道容器：**不再自带滚动**（滚动交给内层两栏：.ttree-scroll / .ttree-side），
+   取消冗余的"最右侧恒定空滚动条"；配合 app.js 的 scroll:false 使 modal__body 也不滚。 */
+.pane-tree { overflow: visible; max-height: none; }
+
+
+/* ── 会话树 · 树形可视化 v2（根/主干/大枝/叶 + 果实簇） ───────────────
+   树形默认视图；泳道图 PaneTree 保留为可选切换视图。配色延续青/橙主题。 */
+.ttree-viewtoggle { display: flex; gap: 6px; align-items: center; }
+.ttree-viewtoggle .btn.is-active {
+  color: var(--acc); border-color: color-mix(in srgb, var(--acc) 45%, var(--border));
+  background: rgba(0,229,255,.08);
+}
+
+.tree-scroll.ttree-scroll { overflow: auto; max-height: 56vh; padding-bottom: 4px; }
+
+.ttree { position: relative; min-width: 560px; padding: 8px 0 12px; }
+/* 树干（竖线）：贯穿根→枝→果实簇 */
+.ttree::before {
+  content: ""; position: absolute; left: 50%; top: 46px; bottom: 18px; width: 2px; margin-left: -1px;
+  border-radius: 2px; opacity: .5;
+  background: linear-gradient(180deg, var(--acc), rgba(0,229,255,.28) 62%, rgba(255,122,61,.35));
+}
+
+/* 根 */
+.ttree__root {
+  position: relative; z-index: 2; width: max-content; max-width: 92%; margin: 0 auto 12px;
+  display: flex; align-items: center; gap: 8px; padding: 5px 15px; border-radius: 999px;
+  font-size: 12.5px; color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--acc) 50%, var(--border));
+  background: var(--panel2);
+  box-shadow: 0 0 12px rgba(0,229,255,.18);
+}
+.ttree__root-ico { width: 9px; height: 9px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px var(--acc); flex: none; }
+.ttree__root-sid { color: var(--dim2); font-size: 11px; }
+
+/* 主干 = 主轴 */
+.ttree__trunk { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 12px; }
+.ttree__mark { position: relative; width: 100%; height: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ttree__mark:hover .ttree__dot { transform: scale(1.35); }
+.ttree__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--k); box-shadow: 0 0 7px var(--k); flex: none; position: relative; z-index: 2; transition: transform .14s var(--ease); }
+.ttree__mark-lab { position: absolute; top: 1px; font-size: 10px; color: var(--dim2); white-space: nowrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ttree__mark.is-right .ttree__mark-lab { left: calc(50% + 12px); }
+.ttree__mark.is-left  .ttree__mark-lab { right: calc(50% + 12px); }
+
+/* 大枝 */
+.ttree__branches { position: relative; z-index: 2; display: flex; flex-direction: column; }
+.ttree__branch { position: relative; display: flex; padding: 3px 0; }
+.ttree__branch.is-right { padding-left: calc(50% + 10px); justify-content: flex-start; }
+.ttree__branch.is-left  { padding-right: calc(50% + 10px); justify-content: flex-end; }
+/* 枝梗（连接树干） */
+.ttree__branch::before {
+  content: ""; position: absolute; top: 15px; width: 12px; height: 1.6px;
+  background: linear-gradient(90deg, rgba(0,229,255,.55), rgba(0,229,255,.14));
+}
+.ttree__branch.is-right::before { left: calc(50% - 1px); }
+.ttree__branch.is-left::before  { right: calc(50% - 1px); background: linear-gradient(270deg, rgba(0,229,255,.55), rgba(0,229,255,.14)); }
+
+.ttree__bwrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; max-width: 100%; }
+.ttree__branch.is-left .ttree__bwrap { align-items: flex-end; }
+
+.ttree__bnode {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer; max-width: 100%;
+  padding: 3px 10px; border-radius: 8px; font-size: 12px; color: var(--text);
+  border: 1px solid var(--border); background: var(--panel2);
+  transition: border-color .14s, background .14s, color .14s;
+}
+.ttree__bnode:hover { border-color: var(--border2); background: rgba(255,255,255,.05); color: var(--acc2); }
+.ttree__branch.is-open .ttree__bnode { border-color: color-mix(in srgb, var(--acc) 40%, var(--border)); background: rgba(0,229,255,.06); }
+.ttree__bcount { flex: none; font-size: 10.5px; font-weight: 700; color: #001417; background: var(--acc2); border-radius: 999px; padding: 0 6px; line-height: 15px; }
+.ttree__btitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.ttree__bmeta { flex: none; font-size: 10.5px; color: var(--dim2); font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ttree__caret { flex: none; color: var(--dim2); font-size: 10px; }
+
+/* 叶：按 kind 聚合 */
+.ttree__leaves { display: flex; flex-wrap: wrap; gap: 5px; max-width: 100%; }
+.ttree__leaf {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  font-size: 11px; color: var(--dim); padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--border); background: color-mix(in srgb, var(--k) 8%, transparent);
+}
+.ttree__leaf:hover { color: var(--text); border-color: var(--k); }
+.ttree__leaf b { color: var(--k); font-weight: 700; }
+.ttree__leaf.is-empty { color: var(--dim2); cursor: default; border-style: dashed; background: none; }
+.ttree__leaf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--k); box-shadow: 0 0 5px var(--k); flex: none; }
+.ttree__leaf-dot.is-sq { border-radius: 2px; }
+.ttree__leaf-dot.is-note { background: transparent; border: 2px solid var(--k); }
+.ttree__leaf-dot.is-star { clip-path: polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+.ttree__leaf-dot.is-goal { border-radius: 2px 2px 5px 5px; }
+
+/* 果实簇：决定 / 待办 / 待补前缀 */
+.ttree__misc { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.ttree__fruit { border: 1px solid color-mix(in srgb, var(--k) 35%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--k) 6%, transparent); padding: 8px 10px; cursor: pointer; transition: border-color .14s, background .14s; }
+.ttree__fruit:hover { border-color: var(--k); background: color-mix(in srgb, var(--k) 11%, transparent); }
+.ttree__fruit-h { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); }
+.ttree__fruit-ico { color: var(--k); }
+.ttree__fruit-h b { margin-left: auto; color: var(--k); }
+.ttree__fruit-list { margin-top: 7px; display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow: auto; }
+.ttree__fruit-item { font-size: 11.5px; color: var(--dim); padding-left: 9px; border-left: 2px solid color-mix(in srgb, var(--k) 50%, transparent); }
+
+
+/* ── 弹层布局 v3：左右两栏（左＝树，右＝明细常驻） ───────────────────
+   病根：明细原在滚动容器 .tree-scroll 下方 → 树一长就被顶到最底，必须滚到底才看见。
+   改法：.ttree-layout 横向 flex；左栏树自身滚动，右栏明细固定宽、独立滚动、始终可见。 */
+.ttree-layout { display: flex; gap: 12px; align-items: stretch; min-height: 0; }
+.ttree-layout > .tree-scroll.ttree-scroll { flex: 1 1 auto; min-width: 0; max-height: 68vh; }
+.ttree-side { flex: 0 0 350px; width: 350px; max-height: 68vh; overflow: auto; }
+.ttree-side .tree-detail { position: sticky; top: 0; }
+.tree-detail-placeholder {
+  padding: 18px 12px; text-align: center; font-size: 12px; color: var(--dim2);
+  border: 1px dashed var(--border); border-radius: 10px;
+}
+/* 窄屏（<820px）：回退为上下堆叠，明细置顶（sticky），绝不落到底部 */
+@media (max-width: 820px) {
+  .ttree-layout { flex-direction: column-reverse; }
+  .ttree-side {
+    flex: none; width: auto; max-height: none; overflow: visible;
+    position: sticky; top: 0; z-index: 3;
+  }
+  .ttree-side .tree-detail, .ttree-side .tree-detail-placeholder {
+    background: var(--panel2); box-shadow: var(--sh-lift);
+  }
+  .ttree-layout > .tree-scroll.ttree-scroll { max-height: 52vh; }
+}
+
+/* 树弹层外层容器不再滚动（scroll:false）→ 两个内栏各自滚动；此处守住高度上限，防溢出 */
+.modal--xwide .modal__body { overflow: hidden; }

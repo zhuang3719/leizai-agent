@@ -1,0 +1,62 @@
+/* ============================================================================
+   任务B · 模型服务不可用提示（常驻横幅 + 状态栏角标）
+   维护：雷影·程序员（逻辑层）。**独立文件**，请勿并入 components.css（该文件归美工）。
+   契约：
+     #llm-banner[hidden]        → 隐藏（默认 hidden）
+     #llm-banner.is-open        → 显示
+     .llm-banner__inner/__icon/__text/__btn  → 横幅内层结构（JS 生成）
+     #status-conn .status-conn__llm(--err)   → 底部状态栏"模型正常/异常"角标
+   ========================================================================== */
+
+.llm-banner {
+  position: fixed;
+  top: calc(var(--titlebar-h, 44px) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9600;
+  width: min(760px, calc(100vw - 32px));
+  pointer-events: none;          /* 容器不挡操作，只有内层卡片可点 */
+}
+.llm-banner[hidden] { display: none !important; }
+
+.llm-banner__inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid #8b2b2b;
+  background: linear-gradient(180deg, #3c1212 0%, #2a0d0d 100%);
+  color: #ffdede;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+  animation: llm-banner-in .18s ease-out;
+}
+@keyframes llm-banner-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.llm-banner__icon { flex: 0 0 auto; font-size: 15px; line-height: 1; color: #ff9a9a; }
+.llm-banner__text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.llm-banner__text b { color: #fff; font-weight: 700; }
+
+.llm-banner__btn {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border-radius: 7px;
+  border: 1px solid #b34a4a;
+  background: #b33030;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+.llm-banner__btn:hover { background: #c93a3a; }
+.llm-banner__btn:disabled { opacity: .55; cursor: default; }
+.llm-banner__btn--ghost { background: transparent; border-color: #6b3030; color: #ffb6b6; }
+.llm-banner__btn--ghost:hover { background: rgba(255, 255, 255, .06); }
+
+/* 底部状态栏角标（更新的是 #status-conn 的 innerHTML，这里只提供类样式） */
+.status-conn__llm { color: var(--ok, #6cd97e); }
+.status-conn__llm--err { color: #ff6b6b; font-weight: 600; }

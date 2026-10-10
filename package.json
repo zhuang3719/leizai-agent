@@ -1,0 +1,20 @@
+{
+  "name": "leizai",
+  "version": "1.0.0",
+  "description": "雷仔 —— 独立运行、可自我进化的 DeepSeek 智能体（灵感源自 Prime Agent 的 propose-not-apply 进化机制）",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "smoke": "node scripts/api-smoke.mjs",
+    "test": "node scripts/integration-test.mjs",
+    "test:scroll": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\scroll-test.ps1 -synthetic"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/zhuang3719/leizai-agent.git"
+  }
+}

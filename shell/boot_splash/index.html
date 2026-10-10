@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雷仔 · 启动</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #050507; overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  video { width: 100%; height: 100%; object-fit: cover; background: #050507; }
+
+  /* v6.58 加载中 + 不确定态进度条（右下角「跳过/静音」已移除） */
+  #load { position: absolute; left: 50%; bottom: 11%; transform: translateX(-50%); z-index: 3;
+          width: min(360px, 62vw); display: flex; flex-direction: column; align-items: center; gap: 12px;
+          opacity: 1; }
+  #load .txt { color: #8A93A3; font: 13px/1 "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; letter-spacing: 2px; }
+  #bar { position: relative; width: 100%; height: 4px; border-radius: 2px;
+         background: rgba(0, 229, 255, .14); overflow: hidden; }
+  #fill { display: block; height: 100%; width: 38%; border-radius: 2px;
+          background: linear-gradient(90deg, rgba(0,229,255,0), #00E5FF, rgba(0,229,255,0));
+          animation: flow 1.2s ease-in-out infinite; transition: width .3s ease-out, background .3s ease; }
+  @keyframes flow { 0% { transform: translateX(-130%); } 100% { transform: translateX(330%); } }
+  #bar.fill #fill { animation: none; width: 100%; background: #00E5FF; }
+  #load.out { opacity: 0; transition: opacity .45s ease .12s; }
+</style>
+</head>
+<body>
+<!-- 外壳本地 splash 页（file://，零引擎依赖）：intro(一次) → loop(无限)，直到外壳撤层。
+     v6.58：移除「跳过 ▶」「静音」按钮及其逻辑（含埋点 splashSkip / 静音偏好）；新增「加载中…」+ 不确定态流动进度条。
+     进度条：默认不确定流动（无法真实度量引擎进度）；若外壳/程序员能给出就绪信号，
+             调用 window.__splashReady()（或派发事件 'leizai:splash-ready'）→ 快速补满并淡出；否则保持流动，由外壳撤层结束。
+     音频：尝试解静音自动播；被拒 → 静默降级为静音续播（不提示、不卡死）。 -->
+<div id="wrap"><video id="v" autoplay playsinline preload="auto"></video></div>
+<div id="load">
+  <div class="txt">加载中…</div>
+  <div id="bar"><i id="fill"></i></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var INTRO = 'intro.mp4', LOOP = 'loop.mp4';
+  var VOLUME = 0.6;
+  var v = document.getElementById('v');
+  var load = document.getElementById('load'), bar = document.getElementById('bar');
+  var t0 = Date.now(), sent = {}, isLoop = false, readyDone = false;
+
+  function post(op, extra) {
+    try {
+      if (window.chrome && window.chrome.webview && window.chrome.webview.postMessage) {
+        window.chrome.webview.postMessage(JSON.stringify(Object.assign({ op: op, ts: Date.now() }, extra || {})));
+      }
+    } catch (e) { }
+  }
+  function mark(phase) { if (sent[phase]) return; sent[phase] = 1; post('splashFrame', { phase: phase, since: Date.now() - t0 }); }
+
+  // 静默降级：有声被拒 → 直接静音续播（不显示控件、不中断动画）
+  function silentMute(reason) {
+    try { v.muted = true; } catch (e) { }
+    post('splashAudio', { state: 'blocked', reason: reason || '' });
+    try { var p = v.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { }
+  }
+
+  function startPlayback() {
+    try { v.volume = VOLUME; } catch (e) { }
+    try { v.muted = false; } catch (e) { }
+    try {
+      v.src = INTRO;   // intro 先播（不循环）
+      var p = v.play();
+      if (p && p.then) {
+        p.then(function () { post('splashAudio', { state: 'on' }); })
+         .catch(function (e) {
+           var name = (e && e.name) || '';
+           if (name === 'NotAllowedError') { silentMute('autoplay'); } else { silentMute(name); }
+         });
+      }
+    } catch (e) { post('splashAudio', { state: 'blocked', reason: 'throw' }); }
+  }
+
+  // 就绪信号：外壳/程序员在引擎就绪时调用 → 进度条快速补满再淡出（更完整）；
+  // 若无此信号，进度条保持不确定流动，由外壳撤层结束（同样安全）。
+  window.__splashReady = function () {
+    if (readyDone) return;
+    readyDone = true;
+    try { bar.classList.add('fill'); } catch (e) { }
+    setTimeout(function () {
+      try { load.classList.add('out'); } catch (e) { }
+      setTimeout(function () { try { load.style.display = 'none'; } catch (e) { } }, 620);
+    }, 340);
+  };
+  window.addEventListener('leizai:splash-ready', function () { try { window.__splashReady(); } catch (e) { } });
+
+  v.addEventListener('playing', function () { mark(isLoop ? 'loop' : 'intro'); });
+  v.addEventListener('ended', function () {
+    if (isLoop) return;
+    isLoop = true;
+    try { v.loop = true; v.src = LOOP; v.currentTime = 0; var p = v.play(); if (p && p.catch) p.catch(function () { silentMute('loop-autoplay'); }); }
+    catch (e) { post('splashError', { name: 'loop-switch' }); }
+  });
+  v.addEventListener('error', function () { post('splashError', { name: 'video-error' }); });
+
+  // 外壳撤层时调用——立即停声/停播（防"进主界面后仍在响"）
+  window.__splashStop = function () {
+    try { v.pause(); } catch (e) { }
+    try { v.muted = true; } catch (e) { }
+    try { v.currentTime = 0; } catch (e) { }
+    try { v.removeAttribute('src'); v.load(); } catch (e) { }   // 释放解码/音频
+    try { if (window.chrome && window.chrome.webview && window.chrome.webview.postMessage) window.chrome.webview.postMessage(JSON.stringify({ op: 'splashStop', ts: Date.now() })); } catch (e) { }
+  };
+
+  startPlayback();
+})();
+</script>
+</body>
+</html>

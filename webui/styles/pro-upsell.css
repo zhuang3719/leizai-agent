@@ -1,0 +1,147 @@
+/* Pro 升级引导（雷影·美工 · 2026-10-02）
+   触点：① 气泡/工具卡内联升级按钮 ② 输入区 Lite 限额条 ③ 顶栏「调度中心收件箱」右侧档位指示器（#vital-tier）+ 官网按钮（#vital-site）
+   仅承载「可见引导」，真正上限拦截以引擎为准。*/
+
+/* ── 通用升级药丸按钮（触点 ①）──────────────────────────── */
+.pro-cta-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pro-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border:none;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:700;letter-spacing:.2px;
+  color:#06121a;
+  background:linear-gradient(135deg,var(--acc) 0%,var(--acc2) 45%,var(--vio) 100%);
+  box-shadow:0 2px 12px rgba(0,229,255,.35),inset 0 0 0 1px rgba(255,255,255,.25);
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.pro-cta:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,229,255,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
+.pro-cta:active{transform:translateY(0)}
+.pro-cta:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.pro-cta__i{font-size:13px;line-height:1}
+.pro-cta--sm{flex:none;padding:3px 10px;font-size:11.5px;box-shadow:0 1px 8px rgba(0,229,255,.3)}
+.pro-cta--sm .pro-cta__i{font-size:11px}
+.pro-cta-ghost{
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:12px;color:var(--dim);
+  background:transparent;border:1px solid var(--border);
+  transition:color .12s,border-color .12s;
+}
+.pro-cta-ghost:hover{color:var(--text);border-color:var(--acc)}
+.pro-cta-ghost:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+
+/* ── 输入区 Lite 限额条（触点 ②）────────────────────────── */
+.composer__pro-limit{
+  display:flex;align-items:center;gap:8px;
+  margin:0 0 8px;padding:7px 10px;border-radius:9px;
+  font-size:12px;color:var(--warn);
+  background:rgba(255,176,32,.08);
+  border:1px solid rgba(255,176,32,.35);
+}
+.composer__pro-limit[hidden]{display:none}
+.composer__pro-limit .cpl__ic{line-height:1;font-size:12.5px}
+.composer__pro-limit .cpl__txt{flex:1;min-width:0}
+.composer__pro-limit .cpl__btn{
+  flex:none;padding:3px 12px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:11.5px;font-weight:700;color:#06121a;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  border:none;box-shadow:0 1px 8px rgba(0,229,255,.3);
+  transition:transform .12s,box-shadow .12s;
+}
+.composer__pro-limit .cpl__btn:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,229,255,.45)}
+.composer__pro-limit .cpl__btn:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+
+/* ── 顶栏 · 官网按钮（雷影·美工）：排在档位指示器右侧，非 nag、dev/产品均显 ── */
+.vital--site{
+  display:inline-flex;align-items:center;gap:5px;
+  font-weight:700;font-size:11px;letter-spacing:.3px;
+  color:var(--dim);background:transparent;
+  border:1px solid var(--border);border-radius:999px;
+  padding:3px 10px;cursor:pointer;white-space:nowrap;
+  transition:color .12s,border-color .12s,background .12s;
+}
+.vital--site:hover{color:var(--acc2);border-color:var(--acc);background:rgba(0,229,255,.12)}
+.vital--site:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.vital--site .vs-ico{flex:none;opacity:.9}
+
+/* ── 顶栏态势条 · 档位指示器（触点 ③，雷影·美工）——
+   位置：#vital-tier 紧邻「调度中心收件箱」(#vital-notify) 右侧；内容由 app.js initVitalTier() 驱动。
+   状态：is-lite 升级 Pro / is-pro 倒计时 / is-near 临近(警示) / is-expired 续费 / is-lifetime 永久 / is-dev 中性 DEV */
+.vital--tier{
+  font-weight:800;font-size:11px;letter-spacing:.3px;
+  color:var(--acc2);background:rgba(0,229,255,.16);
+  border:none;border-radius:999px;padding:3px 10px;cursor:pointer;
+  white-space:nowrap;transition:background .12s,color .12s;
+}
+.vital--tier[hidden]{display:none}
+.vital--tier:hover{background:rgba(0,229,255,.28)}
+.vital--tier.is-pro{color:var(--ok);background:rgba(43,224,136,.16);cursor:default}
+.vital--tier.is-pro:hover{background:rgba(43,224,136,.22)}
+.vital--tier.is-expired{color:var(--warn);background:rgba(255,176,32,.18)}
+.vital--tier.is-expired:hover{background:rgba(255,176,32,.3)}
+/* lite → 「升级 Pro」：吸引但克制 */
+.vital--tier.is-lite{color:var(--acc2);background:rgba(0,229,255,.16)}
+.vital--tier.is-lite:hover{background:rgba(0,229,255,.3)}
+/* 临近到期（≤3 天）：警示色 */
+.vital--tier.is-near{color:var(--warn);background:rgba(255,176,32,.18)}
+.vital--tier.is-near:hover{background:rgba(255,176,32,.32)}
+/* 永久买断 → 「永久」：金色，不 nag */
+.vital--tier.is-lifetime{color:#ffd66b;background:rgba(255,214,107,.16);cursor:default}
+.vital--tier.is-lifetime:hover{background:rgba(255,214,107,.2)}
+/* dev-allow-all：能力放行但未购买 → 中性 DEV 标识（不 nag、不弹窗） */
+.vital--tier.is-dev{color:#9aa4b2;background:rgba(154,164,178,.16);cursor:default}
+.vital--tier.is-dev:hover{background:rgba(154,164,178,.16)}
+
+/* ── 雷影卡片「已停用」第五态（Pro 到期 → 该雷影被暂停）────────── */
+.agent-card.is-paused{opacity:.72}
+.agent-card.is-paused::before{background:var(--warn)}
+.dot-paused{background:var(--warn);box-shadow:0 0 6px rgba(255,176,32,.6)}
+.agent-card__paused{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap}
+.acp__text{font-size:11px;line-height:1.45;color:var(--warn)}
+
+/* ── Pro 激活 / 续费弹窗（雷影·美工）────────────────────── */
+.pro-modal{display:flex;flex-direction:column;gap:0}
+.pmod__hero{display:flex;align-items:center;gap:12px;margin:-2px 0 12px}
+.pmod__glyph{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;
+  background:linear-gradient(135deg,var(--acc),var(--vio));color:#06121a;box-shadow:0 4px 16px rgba(0,229,255,.35)}
+.pmod__glyph.is-exp{background:linear-gradient(135deg,var(--warn),var(--err));color:#1a0a00;box-shadow:0 4px 16px rgba(255,109,61,.35)}
+.pmod__ht{font-size:16px;font-weight:800;letter-spacing:.2px}
+.pmod__hd{font-size:12px;color:var(--dim);margin-top:2px}
+.pmod__feats{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.pmod__feats-title{font-size:12.5px;font-weight:700;color:var(--text)}
+.pmod__benefit{display:flex;align-items:flex-start;gap:9px}
+.pmod__benefit-ico{flex:none;width:20px;text-align:center;font-size:14px;line-height:1.35}
+.pmod__benefit-tx{display:flex;flex-direction:column;min-width:0}
+.pmod__benefit-tx b{font-size:12.5px;font-weight:700;color:var(--text)}
+.pmod__benefit-tx span{font-size:11px;color:var(--dim);line-height:1.5}
+.pmod__feats-sub{font-size:11px;color:var(--dim2);margin-top:2px}
+.pmod__ok{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;margin:0 0 13px;
+  background:rgba(43,224,136,.09);border:1px solid rgba(43,224,136,.4);color:var(--ok);font-size:12.5px}
+.pmod__exp{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;margin:0 0 13px;
+  background:rgba(255,176,32,.09);border:1px solid rgba(255,176,32,.4);color:var(--warn);font-size:12.5px}
+.pmod__exp--soft{background:rgba(143,143,163,.1);border-color:var(--border);color:var(--dim)}
+.pmod__sec{border:1px solid var(--border);border-radius:12px;padding:13px 13px 14px;background:var(--panel2)}
+.pmod__sec + .pmod__sec{margin-top:12px}
+.pmod__sech{font-size:12.5px;font-weight:700;margin:0 0 9px;display:flex;align-items:center;gap:7px}
+.pmod__sech .n{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;
+  background:rgba(0,229,255,.14);border:1px solid var(--acc);color:var(--acc)}
+.pmod__row{display:flex;gap:8px}
+.pmod__input{flex:1;min-width:0;background:#0b0b12;border:1px solid var(--border);border-radius:9px;color:var(--text);
+  font:inherit;font-size:13px;letter-spacing:1px;padding:9px 11px;outline:none}
+.pmod__input::placeholder{color:#5b5b70;letter-spacing:1px}
+.pmod__input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,229,255,.15)}
+.pmod__btn{flex:none;border:none;border-radius:9px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:700;
+  padding:9px 16px;color:#06121a;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 2px 12px rgba(0,229,255,.3);transition:transform .12s,box-shadow .12s}
+.pmod__btn:hover{transform:translateY(-1px)}
+.pmod__btn:disabled{opacity:.6;cursor:default;transform:none}
+.pmod__btn:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.pmod__hint{font-size:11px;color:var(--dim2);margin-top:8px;line-height:1.5}
+.pmod__hint.is-err{color:var(--err)}
+.pmod__buy{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.pmod__btn--buy{background:linear-gradient(135deg,var(--vio),var(--acc));color:#08040f;
+  box-shadow:0 2px 12px rgba(158,123,255,.35)}
+.pmod__price{font-size:11.5px;color:var(--dim)}
+
+/* 低动态模式：关闭位移动效 */
+.app.no-motion .pmod__btn:hover{transform:none}
+.app.no-motion .pro-cta:hover,
+.app.no-motion .composer__pro-limit .cpl__btn:hover{transform:none}
