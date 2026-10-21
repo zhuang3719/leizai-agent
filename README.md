@@ -49,8 +49,6 @@
 
 ## 界面截图
 
-> 截图占位（客户端界面）—— 请替换为真实截图。
-
 ![雷仔客户端 · 项目视图](docs/assets/app-projects.png)
 ![雷仔客户端 · 多雷影协作](docs/assets/app-conversation.png)
 
